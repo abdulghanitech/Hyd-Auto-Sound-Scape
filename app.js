@@ -241,6 +241,7 @@ window.addEventListener("popstate", () => {
 function embedUrl(youtubeId) {
   const params = new URLSearchParams({
     enablejsapi: "1",
+    autoplay: "1",
     controls: "0",
     disablekb: "1",
     playsinline: "1",
@@ -249,6 +250,46 @@ function embedUrl(youtubeId) {
     origin: location.origin,
   });
   return `https://www.youtube.com/embed/${youtubeId}?${params}`;
+}
+
+/* Browsers often block unmuted autoplay. We try on load; if blocked,
+   the first tap / key anywhere starts the ride. */
+let gestureArmed = false;
+
+function isYtPlaying() {
+  if (!ready || !player || !window.YT) return false;
+  return player.getPlayerState() === YT.PlayerState.PLAYING;
+}
+
+function requestPlayback() {
+  kickAmbient(true);
+  if (!ready || !player) {
+    wantPlay = true;
+    return;
+  }
+  wantPlay = false;
+  player.unMute();
+  player.setVolume(100);
+  player.playVideo();
+}
+
+function armGesturePlay() {
+  if (gestureArmed) return;
+  gestureArmed = true;
+  const unlock = () => {
+    if (isYtPlaying()) return;
+    requestPlayback();
+  };
+  document.addEventListener("pointerdown", unlock, { once: true });
+  document.addEventListener("keydown", unlock, { once: true });
+}
+
+function tryAutoplay() {
+  requestPlayback();
+  /* If the browser blocked it, fall back to one-gesture start. */
+  setTimeout(() => {
+    if (!isYtPlaying()) armGesturePlay();
+  }, 900);
 }
 
 function onPlaying(isPlaying) {
