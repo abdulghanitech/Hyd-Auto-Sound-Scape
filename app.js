@@ -193,29 +193,36 @@ async function shareRide() {
     url,
   };
 
-  try {
-    if (navigator.share) {
+  const preferNativeShare =
+    typeof navigator.share === "function" &&
+    (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+      (navigator.userAgentData && navigator.userAgentData.mobile));
+
+  if (preferNativeShare) {
+    try {
       await navigator.share(payload);
       showToast("Link sent");
       return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+      /* fall through to clipboard */
     }
-  } catch (err) {
-    if (err && err.name === "AbortError") return;
   }
 
   try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
+    if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(url);
     } else {
       const ta = document.createElement("textarea");
       ta.value = url;
       ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
+      ta.style.cssText = "position:fixed;opacity:0;left:0;top:0";
       document.body.appendChild(ta);
+      ta.focus();
       ta.select();
-      document.execCommand("copy");
+      const ok = document.execCommand("copy");
       document.body.removeChild(ta);
+      if (!ok) throw new Error("execCommand copy failed");
     }
     showToast("Link copied");
   } catch {

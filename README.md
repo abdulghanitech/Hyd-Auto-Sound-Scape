@@ -12,7 +12,8 @@ A one-screen soundscape for the songs that only slap in a yellow meter — inspi
 npm start
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173)  
+Share a track: [http://localhost:5173/?t=miya-bhai](http://localhost:5173/?t=miya-bhai)
 
 No build step. Static HTML, CSS, and JS.
 
@@ -25,6 +26,7 @@ Edit **`tracks.js`** only:
   youtubeId: "XXXXXXXXXXX", // from youtube.com/watch?v=XXXXXXXXXXX
   title: "Song name",
   artist: "Artist",
+  slug: "my-song", // share URL ?t=my-song
   // cover: "/covers/disc/XXXXXXXXXXX.jpg" // optional
 }
 ```
@@ -36,6 +38,14 @@ npm run covers
 ```
 
 That pulls YouTube thumbnails into `covers/` and square disc art into `covers/disc/`.
+
+## Features
+
+- Illustrated Charminar auto ride loop
+- YouTube-backed player + media keys
+- Fantasy auto **meter** that runs with the song
+- Soft ambient auto bed (Web Audio)
+- Share / deep link per track (`?t=slug`)
 
 ## Swap the ride footage
 
@@ -50,13 +60,16 @@ Keep both framed as a passenger POV from inside a yellow auto.
 
 ```
 tracks.js              ← edit this to change the setlist
-app.js                 player + YouTube iframe API
+app.js                 player, meter, share, deep links
+ambient.js             soft auto putter (Web Audio)
 hero-video.js          lazy-loads bg.mp4
 noise.js               film grain
 styles.css             layout + motion
 scripts/fetch-covers.mjs
 covers/disc/           square artwork used by the player
 ```
+
+See [REVIEW.md](REVIEW.md) for the viral-polish branch checklist.
 
 ## Deploy
 
