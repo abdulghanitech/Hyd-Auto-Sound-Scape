@@ -1,5 +1,6 @@
 /* Looping Hyderabad auto ride behind the UI.
-   bg.jpg always paints underneath as poster / reduced-motion fallback. */
+   bg.jpg paints underneath as poster / reduced-motion fallback.
+   Start the loop ASAP so the page feels alive on first paint. */
 
 (() => {
 
@@ -13,41 +14,44 @@ function wanted() {
   return ENABLED && video && !still.matches && !saveData;
 }
 
+function reveal() {
+  video.classList.add("is-playing");
+}
+
 function load() {
-  if (!wanted() || video.src) return;
+  if (!wanted()) return;
 
-  video.src = SRC;
-  video.load();
+  if (!video.getAttribute("src") && !video.src) {
+    video.src = SRC;
+  }
 
-  video.addEventListener("playing", () => video.classList.add("is-playing"), {
-    once: true,
-  });
-
+  video.addEventListener("playing", reveal);
   video.addEventListener("error", () => {
     video.classList.remove("is-playing");
   });
 
   const attempt = video.play();
   if (attempt) {
-    attempt.catch(() => {
+    attempt.then(reveal).catch(() => {
       const retry = () => {
-        video.play().catch(() => {});
+        video.play().then(reveal).catch(() => {});
       };
       document.addEventListener("pointerdown", retry, { once: true });
+      document.addEventListener("touchstart", retry, { once: true });
     });
   }
 }
 
-if (document.readyState === "complete") {
-  load();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", load, { once: true });
 } else {
-  window.addEventListener("load", () => setTimeout(load, 300), { once: true });
+  load();
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (!video || !video.src) return;
+  if (!video) return;
   if (document.hidden) video.pause();
-  else video.play().catch(() => {});
+  else if (wanted()) video.play().then(reveal).catch(() => {});
 });
 
 still.addEventListener("change", () => {
@@ -56,7 +60,6 @@ still.addEventListener("change", () => {
     video.classList.remove("is-playing");
   } else {
     load();
-    video.play().catch(() => {});
   }
 });
 

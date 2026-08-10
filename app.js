@@ -150,10 +150,20 @@ const nextBtn = el("next");
 let player = null;
 let ready = false;
 let scrubbing = false;
+let wantPlay = false;
 let index = indexFromUrl();
 
 if (el("brand-line") && BRAND.tagline) {
   el("brand-line").textContent = BRAND.tagline;
+}
+
+function kickAmbient(duck) {
+  if (!window.HydAmbient) return;
+  Promise.resolve(window.HydAmbient.start())
+    .then(() => {
+      if (duck) window.HydAmbient.duck(true);
+    })
+    .catch(() => {});
 }
 
 function fmt(seconds) {
@@ -245,10 +255,7 @@ function onPlaying(isPlaying) {
   if (isPlaying) {
     card.classList.add("is-playing");
     playBtn.setAttribute("aria-label", "Pause");
-    if (window.HydAmbient) {
-      window.HydAmbient.start();
-      window.HydAmbient.duck(true);
-    }
+    kickAmbient(true);
   } else {
     card.classList.remove("is-playing");
     playBtn.setAttribute("aria-label", "Play");
@@ -271,6 +278,13 @@ window.onYouTubeIframeAPIReady = function () {
       onReady: () => {
         ready = true;
         el("duration").textContent = fmt(player.getDuration());
+        playBtn.disabled = false;
+        /* Honor a tap that happened before the iframe was ready. */
+        if (wantPlay) {
+          wantPlay = false;
+          onPlaying(true);
+          player.playVideo();
+        }
       },
       onStateChange: (e) => {
         const S = YT.PlayerState;
@@ -304,17 +318,26 @@ setInterval(() => {
   setProgress(cur / dur);
 }, 250);
 
-playBtn.addEventListener("click", async () => {
-  if (!ready) return;
-  if (window.HydAmbient) {
-    try { await window.HydAmbient.start(); } catch { /* ignore */ }
+playBtn.disabled = true;
+
+playBtn.addEventListener("click", () => {
+  /* Never block the song on ambient / network — start YT immediately. */
+  kickAmbient(true);
+
+  if (!ready || !player) {
+    wantPlay = true;
+    onPlaying(true);
+    return;
   }
+
   const S = YT.PlayerState;
   const state = player.getPlayerState();
   if (state === S.PLAYING) {
+    wantPlay = false;
     player.pauseVideo();
     onPlaying(false);
   } else {
+    wantPlay = false;
     onPlaying(true);
     player.playVideo();
   }

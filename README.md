@@ -68,8 +68,6 @@ scripts/fetch-covers.mjs
 covers/disc/           square artwork used by the player
 ```
 
-See [REVIEW.md](REVIEW.md) for the viral-polish branch checklist.
-
 ## Deploy
 
 Any static host works (Vercel, Netlify, GitHub Pages, Cloudflare Pages).

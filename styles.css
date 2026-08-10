@@ -10,7 +10,6 @@
   --shadow-text: 0 1px 8px rgba(0, 0, 0, 0.55);
   --font-ui: "Figtree", "Segoe UI", sans-serif;
   --font-brand: "Syne", "Figtree", sans-serif;
-  --font-meter: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 html, body {
@@ -61,7 +60,7 @@ body {
   object-fit: cover;
   object-position: 50% 45%;
   opacity: 0;
-  transition: opacity 900ms ease;
+  transition: opacity 500ms ease;
 }
 
 .hero-video.is-playing { opacity: 1; }
@@ -563,10 +562,6 @@ button.pill-btn {
   .brand-mark { font-size: clamp(2rem, 10vh, 3rem); }
   .player { padding-block: 8px; }
   .disc { width: 44px; height: 44px; }
-}
-
-@media (min-width: 768px) and (min-height: 700px) {
-  .credit { display: block; }
 }
 
 @media (prefers-reduced-motion: reduce) {
