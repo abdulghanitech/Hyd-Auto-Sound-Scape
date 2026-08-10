@@ -42,13 +42,13 @@ body {
   background-color: var(--ink);
   background-image: url("/bg.jpg");
   background-size: cover;
-  background-position: 50% 42%;
+  background-position: 50% 45%;
   background-repeat: no-repeat;
 
-  /* Bumpy Hyderabad roads — UI stays fixed above. */
-  scale: 1.05;
-  animation: auto-bump 1.7s ease-in-out infinite,
-             auto-sway 3.9s ease-in-out infinite;
+  /* Bumpy Hyd roads on the still; video carries its own ride motion. */
+  scale: 1.06;
+  animation: auto-bump 1.55s ease-in-out infinite,
+             auto-sway 3.6s ease-in-out infinite;
   will-change: translate, rotate;
 }
 
@@ -58,9 +58,9 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 42%;
+  object-position: 50% 45%;
   opacity: 0;
-  transition: opacity 700ms ease;
+  transition: opacity 900ms ease;
 }
 
 .hero-video.is-playing { opacity: 1; }
@@ -97,8 +97,14 @@ body {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(to bottom, rgba(18, 16, 14, 0.42) 0%, rgba(18, 16, 14, 0.05) 38%, rgba(18, 16, 14, 0.18) 58%, rgba(18, 16, 14, 0.62) 100%),
-    radial-gradient(ellipse 80% 55% at 50% 35%, rgba(245, 197, 24, 0.08), transparent 70%);
+    linear-gradient(to bottom, rgba(18, 16, 14, 0.38) 0%, rgba(18, 16, 14, 0.02) 36%, rgba(18, 16, 14, 0.12) 58%, rgba(18, 16, 14, 0.58) 100%),
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255, 170, 60, 0.14), transparent 72%);
+  animation: dusk-breathe 7.5s ease-in-out infinite;
+}
+
+@keyframes dusk-breathe {
+  0%, 100% { opacity: 0.92; }
+  50% { opacity: 1; }
 }
 
 .grain {
@@ -436,8 +442,8 @@ main {
 @media (max-width: 767px) {
   :root { --edge: 14px; }
 
-  .hero-bg { background-position: 48% 40%; }
-  .hero-video { object-position: 48% 40%; }
+  .hero-bg { background-position: 50% 42%; }
+  .hero-video { object-position: 50% 42%; }
 
   .brand {
     margin-top: 0;
@@ -519,8 +525,9 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .disc, .clock .colon, .hero-bg, .brand, .player { animation: none !important; }
+  .disc, .clock .colon, .hero-bg, .brand, .player, .scrim { animation: none !important; }
   .hero-bg { scale: 1; }
   .hero-video { display: none; }
   .brand, .player { opacity: 1; translate: 0 0; filter: none; }
+  .scrim { opacity: 1; }
 }

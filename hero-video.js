@@ -1,5 +1,5 @@
-/* Looping drive footage behind the auto interior.
-   bg.jpg always paints underneath; this layer is additive. */
+/* Looping Hyderabad auto ride behind the UI.
+   bg.jpg always paints underneath as poster / reduced-motion fallback. */
 
 (() => {
 
