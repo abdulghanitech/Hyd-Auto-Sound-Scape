@@ -1,0 +1,17 @@
+{
+  "name": "HYD AUTO",
+  "short_name": "HYD AUTO",
+  "description": "Gaane that only slap in a Hyderabad auto.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12100E",
+  "theme_color": "#12100E",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

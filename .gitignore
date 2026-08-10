@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# local / host tooling
+.DS_Store
+Thumbs.db
+*.log
+.vercel
+.netlify
+.cache/
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+.secrets/
+
+# editor
+.idea/
+.vscode/
+*.swp
+*~

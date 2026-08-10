@@ -1,0 +1,23 @@
+{
+  "name": "hyd-auto-sound-scape",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HYD AUTO — Hyderabadi auto soundscape. Gaane that only slap in a yellow meter.",
+  "license": "MIT",
+  "author": "Abdul Ghani",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdulghanitech/Hyd-Auto-Sound-Scape.git"
+  },
+  "homepage": "https://github.com/abdulghanitech/Hyd-Auto-Sound-Scape#readme",
+  "bugs": {
+    "url": "https://github.com/abdulghanitech/Hyd-Auto-Sound-Scape/issues"
+  },
+  "scripts": {
+    "start": "npx --yes serve -l 5173 .",
+    "covers": "node scripts/fetch-covers.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
