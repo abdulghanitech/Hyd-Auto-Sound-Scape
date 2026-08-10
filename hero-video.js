@@ -19,7 +19,7 @@ const ENABLED = true;
    edge-cached for a day and fetched in ranges during playback; deploying
    different bytes under the same URL hands mid-session viewers a mix of
    old and new ranges, which decodes as glitches and restarts. */
-const VIDEO_V = "3";
+const VIDEO_V = "4";
 const portrait = window.matchMedia("(orientation: portrait)").matches;
 const SRC = (portrait ? "/bg-portrait.mp4" : "/bg.mp4") + "?v=" + VIDEO_V;
 

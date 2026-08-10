@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Encode Hyderabad auto windshield travel loops from illustrated keyframes."""
+"""Encode Hyderabad auto windshield travel loops from illustrated keyframes.
+
+Polish goals:
+- Cabin locked; windshield content dollies forward
+- Color-match plates to k01 so morphs don't flash
+- End on k01 at zoom 1.0 with a long ease for a soft loop seam
+- Bump amplitude eases near the loop point
+"""
 
 from __future__ import annotations
 
@@ -33,6 +40,18 @@ def load(path: Path, w: int, h: int) -> np.ndarray:
     return np.frombuffer(raw, dtype=np.uint8).reshape(h, w, 3).astype(np.float32)
 
 
+def match_color(src: np.ndarray, ref: np.ndarray) -> np.ndarray:
+    """Simple per-channel mean/std match toward ref (keeps mood consistent)."""
+    out = src.copy()
+    for c in range(3):
+        s = src[..., c]
+        r = ref[..., c]
+        s_std = s.std() + 1e-3
+        r_std = r.std() + 1e-3
+        out[..., c] = (s - s.mean()) * (r_std / s_std) + r.mean()
+    return np.clip(out, 0, 255)
+
+
 def sample(img: np.ndarray, zoom: float, dx: float = 0.0, dy: float = 0.0, cy_ratio: float = 0.46) -> np.ndarray:
     h, w, _ = img.shape
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
@@ -61,7 +80,8 @@ def windshield_mask(h: int, w: int, top, bottom, left, right) -> np.ndarray:
     mask *= np.clip((bottom[0] - ys) / bottom[1], 0, 1)
     mask *= np.clip((xs - left[0]) / left[1], 0, 1)
     mask *= np.clip((right[0] - xs) / right[1], 0, 1)
-    return np.clip(mask, 0, 1) ** 0.8
+    # Feather edges so cabin/street join is soft
+    return np.clip(mask, 0, 1) ** 0.72
 
 
 def lerp_plates(plates, t: float) -> np.ndarray:
@@ -73,7 +93,12 @@ def lerp_plates(plates, t: float) -> np.ndarray:
     return plates[i] * (1 - f) + plates[i2] * f
 
 
-def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, crf: int, seconds: float = 14.0) -> None:
+def smoothstep(t: float) -> float:
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, crf: int, seconds: float = 16.0) -> None:
     fps = 24
     n = int(seconds * fps)
     mask3 = mask[..., None]
@@ -109,31 +134,53 @@ def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, c
         stderr=subprocess.DEVNULL,
     )
     assert proc.stdin is not None
+
+    # Timeline:
+    # 0–78%  forward dolly + plate morph toward end plate
+    # 78–100% long ease back to base @ zoom 1.0 (seamless hard-loop)
+    travel_end = 0.78
+
     for fi in range(n):
         u = fi / n
-        if u < 0.85:
-            zprog = u / 0.85
-            zoom = 1.0 + 0.12 * zprog
-            plate_t = zprog
+        if u < travel_end:
+            zprog = u / travel_end
+            # ease-in-out zoom so motion never jerks
+            e = smoothstep(zprog)
+            zoom = 1.0 + 0.10 * e
+            plate_t = e * 0.92  # leave headroom before return
+            bump_scale = 1.0
         else:
-            t = (u - 0.85) / 0.15
-            ease = t * t * (3 - 2 * t)
-            zoom = 1.12 * (1 - ease) + 1.0 * ease
-            plate_t = 1.0
-        dy = 2.6 * np.sin(fi * 0.62) + 1.3 * np.sin(fi * 1.41)
-        dx = 1.6 * np.sin(fi * 0.33)
-        plate = lerp_plates(plates, min(plate_t, 0.999))
-        exterior = sample(plate, zoom, dx=dx * 0.35, dy=dy * 0.3, cy_ratio=cy_ratio)
+            t = (u - travel_end) / (1.0 - travel_end)
+            ease = smoothstep(t)
+            # From current travel state back to identity
+            zoom = (1.0 + 0.10) * (1 - ease) + 1.0 * ease
+            plate_t = 0.92 * (1 - ease)  # blend back toward first plate
+            bump_scale = 1.0 - 0.85 * ease  # calm the cabin near the seam
+
+        dy = bump_scale * (2.2 * np.sin(fi * 0.58) + 1.1 * np.sin(fi * 1.37))
+        dx = bump_scale * (1.3 * np.sin(fi * 0.31))
+
+        plate = lerp_plates(plates, min(max(plate_t, 0.0), 0.999))
+        exterior = sample(plate, zoom, dx=dx * 0.32, dy=dy * 0.28, cy_ratio=cy_ratio)
         interior = sample(
             base,
-            1.0 + 0.003 * np.sin(fi * 0.45),
-            dx=dx * 0.12,
-            dy=dy * 0.28,
+            1.0 + 0.0025 * np.sin(fi * 0.42) * bump_scale,
+            dx=dx * 0.10,
+            dy=dy * 0.22,
             cy_ratio=cy_ratio,
         )
         frame = interior * (1 - mask3) + exterior * mask3
-        frame = sample(frame, 1.0, dy=dy * 0.2, cy_ratio=cy_ratio)
+        frame = sample(frame, 1.0, dy=dy * 0.16, cy_ratio=cy_ratio)
+
+        # Final 8% crossfade whole frame toward exact base still → invisible loop cut
+        if u > 0.92:
+            fade = smoothstep((u - 0.92) / 0.08)
+            frame = frame * (1 - fade) + base * fade
+
         proc.stdin.write(np.clip(frame, 0, 255).astype(np.uint8).tobytes())
+        if fi % 48 == 0:
+            print(f"{out_mp4.name} frame {fi}/{n} zoom={zoom:.3f} plate_t={plate_t:.3f}")
+
     proc.stdin.close()
     if proc.wait() != 0:
         sys.exit(f"ffmpeg failed for {out_mp4}")
@@ -145,13 +192,15 @@ def main() -> None:
         if not (KF / name).exists():
             sys.exit(f"missing {KF / name}")
 
+    # Landscape
     w, h = 1600, 900
     base = load(KF / "k01.jpg", w, h)
-    plates = [load(KF / f"k{i}.jpg", w, h) for i in ("01", "02", "03", "04", "05")]
+    plates = [match_color(load(KF / f"k{i}.jpg", w, h), base) for i in ("01", "02", "03", "04", "05")]
+    plates[0] = base
     plates.append(base)
     mask = windshield_mask(h, w, (0.07, 0.11), (0.80, 0.12), (0.08, 0.11), (0.86, 0.12))
     raw = ROOT / "bg-raw.mp4"
-    encode(raw, w, h, base, plates, mask, 0.46, 20, 14)
+    encode(raw, w, h, base, plates, mask, 0.46, 20, 16)
     subprocess.check_call(
         [
             "ffmpeg",
@@ -164,7 +213,7 @@ def main() -> None:
             "-pix_fmt",
             "yuv420p",
             "-crf",
-            "24",
+            "23",
             "-preset",
             "slow",
             "-movflags",
@@ -191,12 +240,14 @@ def main() -> None:
         stderr=subprocess.DEVNULL,
     )
 
+    # Portrait
     w, h = 1080, 1920
     base = load(KF / "p01.jpg", w, h)
-    plates = [base] + [load(KF / f"k{i}.jpg", w, h) for i in ("02", "03", "04", "05")] + [base]
+    mid = [match_color(load(KF / f"k{i}.jpg", w, h), base) for i in ("02", "03", "04", "05")]
+    plates = [base] + mid + [base]
     mask = windshield_mask(h, w, (0.09, 0.11), (0.74, 0.13), (0.07, 0.11), (0.90, 0.10))
     raw = ROOT / "bg-portrait-raw.mp4"
-    encode(raw, w, h, base, plates, mask, 0.40, 21, 14)
+    encode(raw, w, h, base, plates, mask, 0.40, 21, 16)
     subprocess.check_call(
         [
             "ffmpeg",
@@ -209,7 +260,7 @@ def main() -> None:
             "-pix_fmt",
             "yuv420p",
             "-crf",
-            "25",
+            "24",
             "-preset",
             "slow",
             "-movflags",
