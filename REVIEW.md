@@ -15,11 +15,11 @@ npm start
 - URL updates per track: `/?t=miya-bhai`, `/?t=marfa`, …
 - Opening a shared link jumps straight to that song
 
-### 2. Roadways-style ride background
-- Illustrated flat-gouache auto POV toward Charminar (same pattern as roadways.wtf’s bus cabin)
-- Still paints first (`bg.jpg` / `bg-portrait.jpg`); looping footage attaches after `load` via `hero-video.js`
-- Fixed yellow canopy + moving windshield; landscape + portrait loops (~2.5MB / ~2.3MB)
-- CSS bump only on the still fallback; video carries its own ride vibration
+### 2. Minimal forward auto-travel loop
+- Procedural dusk POV: vanishing-point road, scrolling center dashes, yellow canopy/hood frame
+- Forward-only seamless loop (dash phase wraps; no reverse / ping-pong / slide morphs)
+- Still paints first (`bg.jpg` / `bg-portrait.jpg`); footage lazy-loads via `hero-video.js`
+- `bg.mp4` ≈100KB (well under 1.2MB); rebuild with `npm run ride`, then bump `VIDEO_V`
 
 ### 3. Playlist sharpening
 - Hyd-coded openers first: Miya Bhai → Marfa → Teri Yaadein → Blue Eyes → Seeti Maar…
@@ -39,14 +39,14 @@ npm start
 - Desktop credit line (“for the yellow meter…”)
 
 ## What to judge
-1. Does the illustrated ride feel like roadways.wtf — cabin fixed, road alive?
+1. Does the minimal road loop feel like continuous auto travel (not a slideshow)?
 2. Ambient too quiet / too loud under music?
-3. Mobile portrait artwork framing OK?
+3. Mobile portrait framing OK with the canopy silhouette?
 4. Share link round-trip (`?t=…`) correct?
 
-Rebuild ride loops (optional):
+Rebuild ride loops:
 
 ```bash
-python3 scripts/generate-ride.py
+npm run ride
 # then bump VIDEO_V in hero-video.js
 ```
