@@ -41,19 +41,20 @@ That pulls YouTube thumbnails into `covers/` and square disc art into `covers/di
 
 ## Features
 
-- Continuous Charminar auto ride loop (full-bleed POV)
+- Illustrated Charminar auto ride loop (roadways.wtf-style cabin POV)
 - YouTube-backed player + media keys
 - Soft ambient auto bed (Web Audio)
 - Share / deep link per track (`?t=slug`)
 
 ## Swap the ride footage
 
-| File     | Role                                      |
-| -------- | ----------------------------------------- |
-| `bg.jpg` | Still / poster (paints first, always)     |
-| `bg.mp4` | Looping drive clip (loads after page load) |
+| File | Role |
+| --- | --- |
+| `bg.jpg` / `bg-portrait.jpg` | Still poster / reduced-motion fallback |
+| `bg.mp4` / `bg-portrait.mp4` | Looping ride (lazy-loaded after page load) |
 
-Keep both framed as a passenger POV from inside a yellow auto.
+Rebuild from keyframes: `npm run ride`, then bump `VIDEO_V` in `hero-video.js`.
+
 
 ## Project layout
 

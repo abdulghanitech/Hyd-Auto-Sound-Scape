@@ -320,12 +320,7 @@ window.onYouTubeIframeAPIReady = function () {
         ready = true;
         el("duration").textContent = fmt(player.getDuration());
         playBtn.disabled = false;
-        /* Honor a tap that happened before the iframe was ready. */
-        if (wantPlay) {
-          wantPlay = false;
-          onPlaying(true);
-          player.playVideo();
-        }
+        tryAutoplay();
       },
       onStateChange: (e) => {
         const S = YT.PlayerState;
@@ -361,27 +356,18 @@ setInterval(() => {
 
 playBtn.disabled = true;
 
-playBtn.addEventListener("click", () => {
-  /* Never block the song on ambient / network — start YT immediately. */
-  kickAmbient(true);
+playBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const S = window.YT ? YT.PlayerState : null;
 
-  if (!ready || !player) {
-    wantPlay = true;
-    onPlaying(true);
-    return;
-  }
-
-  const S = YT.PlayerState;
-  const state = player.getPlayerState();
-  if (state === S.PLAYING) {
+  if (ready && player && S && player.getPlayerState() === S.PLAYING) {
     wantPlay = false;
     player.pauseVideo();
     onPlaying(false);
-  } else {
-    wantPlay = false;
-    onPlaying(true);
-    player.playVideo();
+    return;
   }
+
+  requestPlayback();
 });
 
 prevBtn.addEventListener("click", () => {
