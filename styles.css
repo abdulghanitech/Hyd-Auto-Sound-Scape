@@ -16,6 +16,9 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 html { background: var(--ink); }
@@ -24,7 +27,10 @@ body {
   font-family: var(--font-ui);
   color: #fff;
   overflow: hidden;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* ---------- background ---------- */
@@ -226,31 +232,35 @@ main {
 
 /* ---------- player ---------- */
 
+/* Center with left/right insets — never combine transform centering with a
+   translate animation (that double-shifts the pill off-screen on mobile). */
 .player {
   position: fixed;
-  left: 50%;
-  bottom: calc(var(--edge) + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  left: var(--edge);
+  right: var(--edge);
+  bottom: calc(max(12px, var(--edge)) + env(safe-area-inset-bottom, 0px));
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 16px;
-  width: min(640px, calc(100vw - var(--edge) * 2));
+  width: auto;
+  max-width: 640px;
+  margin-inline: auto;
   padding: 12px 16px;
   border-radius: 999px;
-  background: rgba(22, 18, 12, 0.48);
+  background: rgba(22, 18, 12, 0.55);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(245, 197, 24, 0.22);
   box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 248, 232, 0.12);
-  animation: player-in 1s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: player-in 0.85s 0.12s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes player-in {
-  from { opacity: 0; translate: -50% 24px; }
-  to { opacity: 1; translate: -50% 0; }
+  from { opacity: 0; translate: 0 28px; }
+  to { opacity: 1; translate: 0 0; }
 }
 
 .disc {
@@ -424,44 +434,93 @@ main {
 /* ---------- mobile ---------- */
 
 @media (max-width: 767px) {
-  :root { --edge: 16px; }
+  :root { --edge: 14px; }
 
   .hero-bg { background-position: 48% 40%; }
   .hero-video { object-position: 48% 40%; }
 
-  .brand { margin-top: -4vh; padding-inline: 8px; }
-  .brand-mark { font-size: clamp(2.8rem, 16vw, 4.4rem); }
-  .brand-line { font-size: 0.95rem; max-width: 18rem; }
+  .brand {
+    margin-top: 0;
+    padding-inline: 10px;
+    /* Keep brand above the player, not crushed into it */
+    margin-bottom: 28vh;
+  }
+  .brand-mark { font-size: clamp(2.6rem, 14vw, 3.8rem); }
+  .brand-mark::after { margin-top: 10px; height: 3px; width: min(140px, 36vw); }
+  .brand-line {
+    margin-top: 12px;
+    font-size: 0.92rem;
+    max-width: 17.5rem;
+  }
+
+  .clock, .links { font-size: 13px; }
 
   .pill { padding: 10px; }
   .pill-label, .pill-arrow { display: none; }
 
   .player {
     gap: 10px;
-    padding: 10px 12px;
+    padding: 10px 12px 10px 10px;
+    border-radius: 28px;
+    /* Sit clear of iOS Safari's bottom chrome */
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
-  .disc { width: 56px; height: 56px; }
+  .disc { width: 52px; height: 52px; }
+  .meta { flex: 1 1 0; min-width: 0; }
   .title { font-size: 14px; }
   .artist { font-size: 12px; }
   .time { font-size: 11px; }
-  .ctl { width: 32px; height: 32px; }
-  .ctl.play { width: 46px; height: 46px; }
+  .controls {
+    flex: 0 0 auto;
+    gap: 2px;
+    margin-left: auto;
+  }
+  .ctl {
+    width: 36px;
+    height: 36px;
+  }
+  .ctl.play { width: 44px; height: 44px; }
+  .ctl.play svg { width: 22px; height: 22px; }
   .seek::-webkit-slider-thumb { opacity: 1; }
   .seek::-moz-range-thumb { opacity: 1; }
 }
 
+/* Very narrow phones — compact two-line meta, bigger hit targets */
 @media (max-width: 400px) {
-  .controls { gap: 2px; }
-  .ctl { width: 30px; height: 30px; }
-  .brand-line { max-width: 16rem; font-size: 0.88rem; }
-  .player { gap: 8px; padding: 9px 10px; }
-  .disc { width: 52px; height: 52px; }
+  :root { --edge: 12px; }
+
+  .brand-mark { font-size: clamp(2.4rem, 15vw, 3.2rem); }
+  .brand-line { font-size: 0.86rem; max-width: 15.5rem; }
+
+  .player {
+    gap: 8px;
+    padding: 9px 8px 9px 9px;
+    border-radius: 24px;
+  }
+
+  .disc { width: 48px; height: 48px; }
+  .title { font-size: 13px; }
+  .artist { font-size: 11px; }
+  .time { display: none; }
+  .ctl { width: 34px; height: 34px; }
+  .ctl.play { width: 42px; height: 42px; }
+  .ctl svg { width: 18px; height: 18px; }
+  .ctl.play svg { width: 20px; height: 20px; }
+}
+
+/* Short viewports (landscape phones / small height) */
+@media (max-height: 520px) {
+  .brand { margin-bottom: 0; margin-top: -2vh; }
+  .brand-line { display: none; }
+  .brand-mark { font-size: clamp(2rem, 10vh, 3rem); }
+  .player { padding-block: 8px; }
+  .disc { width: 44px; height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .disc, .clock .colon, .hero-bg, .brand, .player { animation: none !important; }
   .hero-bg { scale: 1; }
   .hero-video { display: none; }
-  .brand, .player { opacity: 1; translate: none; filter: none; }
+  .brand, .player { opacity: 1; translate: 0 0; filter: none; }
 }

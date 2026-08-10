@@ -4,7 +4,7 @@ Sit in the back seat of a Hyderabad auto. Charminar ahead. Speakers blasting.
 
 A one-screen soundscape for the songs that only slap in a yellow meter — inspired by [roadways.wtf](https://roadways.wtf) and [saloon.wtf](https://saloon.wtf).
 
-**Live vibe:** full-bleed auto POV, bumpy-road motion, film grain, and a YouTube-backed player.
+**Live:** [hyd-auto.vercel.app](https://hyd-auto.vercel.app)
 
 ## Quick start
 
