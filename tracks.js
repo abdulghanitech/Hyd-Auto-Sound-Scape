@@ -16,9 +16,24 @@
 
 window.TRACKS = [
   {
+    youtubeId: "RMLlyK9rLmc",
+    title: "Miya Bhai Hyderabadi",
+    artist: "Ruhaan Arshad",
+  },
+  {
     youtubeId: "DmmonjioJsI",
     title: "Hyderabadi Marfa",
     artist: "DJ Nikhil Martyn",
+  },
+  {
+    youtubeId: "eafo6MoqDPw",
+    title: "Teri Yaadein",
+    artist: "Atif Aslam · Mix",
+  },
+  {
+    youtubeId: "NbyHNASFi6U",
+    title: "Blue Eyes",
+    artist: "Yo Yo Honey Singh",
   },
   {
     youtubeId: "2mDCVzruYzQ",
@@ -56,11 +71,6 @@ window.TRACKS = [
     artist: "Lalit Pandit · Dabangg",
   },
   {
-    youtubeId: "udra3Mfw2oo",
-    title: "London Thumakda",
-    artist: "Amit Trivedi · Queen",
-  },
-  {
     youtubeId: "KUN5Uf9mObQ",
     title: "Arabic Kuthu",
     artist: "Anirudh · Beast",
@@ -79,16 +89,6 @@ window.TRACKS = [
     youtubeId: "_KhQT-LGb-4",
     title: "Aankh Marey",
     artist: "Tanishk · Simmba",
-  },
-  {
-    youtubeId: "hjWf8A0YNSE",
-    title: "High Rated Gabru",
-    artist: "Guru Randhawa",
-  },
-  {
-    youtubeId: "gSk6A8-IpyI",
-    title: "Riksha Me Baito",
-    artist: "Telangana Folk",
   },
 ];
 
