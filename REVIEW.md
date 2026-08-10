@@ -35,6 +35,7 @@ npm start
 
 ## Intentionally removed
 - Fantasy fare **meter** (didn’t land visually)
+- Desktop credit line (“for the yellow meter…”)
 
 ## What to judge
 1. Does the ride video feel like travelling (not slideshow)?
