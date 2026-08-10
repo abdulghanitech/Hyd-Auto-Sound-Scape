@@ -41,7 +41,7 @@ That pulls YouTube thumbnails into `covers/` and square disc art into `covers/di
 
 ## Features
 
-- Minimal infinite auto-travel loop (forward road POV)
+- Illustrated Hyderabad auto windshield ride loop (Charminar POV)
 - YouTube-backed player + media keys
 - Soft ambient auto bed (Web Audio)
 - Share / deep link per track (`?t=slug`)

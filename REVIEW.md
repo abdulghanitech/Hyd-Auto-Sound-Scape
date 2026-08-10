@@ -15,11 +15,11 @@ npm start
 - URL updates per track: `/?t=miya-bhai`, `/?t=marfa`, …
 - Opening a shared link jumps straight to that song
 
-### 2. Minimal forward auto-travel loop
-- Procedural dusk POV: vanishing-point road, scrolling center dashes, yellow canopy/hood frame
-- Forward-only seamless loop (dash phase wraps; no reverse / ping-pong / slide morphs)
-- Still paints first (`bg.jpg` / `bg-portrait.jpg`); footage lazy-loads via `hero-video.js`
-- `bg.mp4` ≈100KB (well under 1.2MB); rebuild with `npm run ride`, then bump `VIDEO_V`
+### 2. Hyderabad auto windshield ride
+- Illustrated cabin POV: yellow auto frame, windshield, marigold garland, driver + handlebars
+- Charminar + old-city street through the glass; cabin locked, road dollies forward
+- Still paints first; footage lazy-loads via `hero-video.js` (landscape + portrait)
+- Rebuild: `npm run ride`, then bump `VIDEO_V`
 
 ### 3. Playlist sharpening
 - Hyd-coded openers first: Miya Bhai → Marfa → Teri Yaadein → Blue Eyes → Seeti Maar…
@@ -39,9 +39,9 @@ npm start
 - Desktop credit line (“for the yellow meter…”)
 
 ## What to judge
-1. Does the minimal road loop feel like continuous auto travel (not a slideshow)?
-2. Ambient too quiet / too loud under music?
-3. Mobile portrait framing OK with the canopy silhouette?
+1. Can you read Hyderabad + auto + windshield immediately?
+2. Does the ride feel continuous (not a slideshow)?
+3. Ambient too quiet / too loud under music?
 4. Share link round-trip (`?t=…`) correct?
 
 Rebuild ride loops:
