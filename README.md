@@ -41,9 +41,8 @@ That pulls YouTube thumbnails into `covers/` and square disc art into `covers/di
 
 ## Features
 
-- Illustrated Charminar auto ride loop
+- Continuous Charminar auto ride loop (full-bleed POV)
 - YouTube-backed player + media keys
-- Fantasy auto **meter** that runs with the song
 - Soft ambient auto bed (Web Audio)
 - Share / deep link per track (`?t=slug`)
 
@@ -60,7 +59,7 @@ Keep both framed as a passenger POV from inside a yellow auto.
 
 ```
 tracks.js              ← edit this to change the setlist
-app.js                 player, meter, share, deep links
+app.js                 player, share, deep links
 ambient.js             soft auto putter (Web Audio)
 hero-video.js          lazy-loads bg.mp4
 noise.js               film grain

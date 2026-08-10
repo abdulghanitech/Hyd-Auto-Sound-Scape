@@ -115,6 +115,6 @@ window.TRACKS = [
 window.HYD_AUTO = {
   name: "HYD AUTO",
   album: "Hyderabad Auto",
-  tagline: "Speaker full. Meter running. Charminar left.",
+  tagline: "Speaker full. Charminar left.",
   shareText: "HYD AUTO — gaane that only slap in a Hyderabad auto.",
 };

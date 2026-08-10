@@ -11,39 +11,33 @@ npm start
 ## What’s in this branch
 
 ### 1. Share + deep links
-- **Share** pill (native share sheet on mobile, clipboard copy on desktop)
+- **Share** pill (native share on mobile, clipboard on desktop)
 - URL updates per track: `/?t=miya-bhai`, `/?t=marfa`, …
 - Opening a shared link jumps straight to that song
-- Tab title + description follow the current track (better for recordings / share sheets)
 
-### 2. Signature meter fantasy
-- Auto **METER** above the player
-- Starts ticking on play, pauses on pause
-- Fare climbs irregularly; routes + Deccani notes rotate
-- Turns spicy/absurd colors as the fare gets ridiculous
+### 2. Continuous ride background
+- Single photoreal auto POV toward Charminar
+- One continuous dolly + bump loop (no slide morphs / crossfades)
+- Seamless ping-pong so the ride never hard-cuts
 
 ### 3. Playlist sharpening
 - Hyd-coded openers first: Miya Bhai → Marfa → Teri Yaadein → Blue Eyes → Seeti Maar…
-- Every track has an explicit `slug` for clean share URLs
-- Still edit-only-in-`tracks.js`
+- Explicit `slug`s for clean share URLs
 
 ### 4. Soft ambient bed
-- Subtle synthesized auto putter (`ambient.js`, Web Audio — no audio files)
+- Subtle synthesized auto putter (`ambient.js`)
 - Starts on first play, ducks under the song
 - Disabled when `prefers-reduced-motion`
 
 ### 5. Copy / identity
-- Tagline: **Speaker full. Meter running. Charminar left.**
-- `NOW PLAYING` label in the player (recording-readable)
-- Quiet desktop credit pointing at `tracks.js`
+- Tagline: **Speaker full. Charminar left.**
+- `NOW PLAYING` label in the player
+
+## Intentionally removed
+- Fantasy fare **meter** (didn’t land visually)
 
 ## What to judge
-1. Does the meter feel fun or gimmicky?
-2. Is ambient too quiet / too loud under music?
-3. Mobile: meter + player still fully on-screen?
+1. Does the ride video feel like travelling (not slideshow)?
+2. Ambient too quiet / too loud under music?
+3. Mobile layout clean without the meter?
 4. Share link round-trip (`?t=…`) correct?
-
-## Out of scope (intentionally)
-- No login, feed, map, or multi-page site
-- No loud horn / extra sound gimmicks
-- OG image is still the static ride still (dynamic per-track OG would need a host function)

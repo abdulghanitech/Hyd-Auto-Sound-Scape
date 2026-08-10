@@ -244,111 +244,7 @@ button.pill-btn {
   }
 }
 
-/* ---------- meter fantasy ---------- */
-
-.meter {
-  position: fixed;
-  left: 50%;
-  bottom: calc(108px + env(safe-area-inset-bottom, 0px));
-  translate: -50% 0;
-  z-index: 18;
-  width: min(220px, calc(100vw - 48px));
-  padding: 10px 14px 12px;
-  border-radius: 16px;
-  background: rgba(12, 10, 8, 0.72);
-  border: 1px solid rgba(245, 197, 24, 0.35);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(255, 248, 232, 0.04);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  font-family: var(--font-meter);
-  text-align: center;
-  pointer-events: none;
-  animation: meter-in 0.9s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes meter-in {
-  from { opacity: 0; translate: -50% 16px; }
-  to { opacity: 1; translate: -50% 0; }
-}
-
-.meter-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 2px;
-}
-
-.meter-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--auto-yellow);
-}
-
-.meter-route {
-  font-size: 10px;
-  font-weight: 500;
-  color: rgba(255, 248, 232, 0.55);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.meter-fare {
-  display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 2px;
-  color: #7CFFB2;
-  text-shadow: 0 0 18px rgba(124, 255, 178, 0.25);
-  transition: color 0.3s ease;
-}
-
-.meter-currency {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.meter-value {
-  font-size: clamp(1.8rem, 6vw, 2.35rem);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
-
-.meter-note {
-  margin-top: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(255, 248, 232, 0.62);
-  min-height: 1.2em;
-}
-
-.meter.is-running .meter-value {
-  animation: meter-pulse 0.75s ease-in-out infinite;
-}
-
-.meter.is-tick .meter-value {
-  animation: meter-pop 0.28s ease-out;
-}
-
-.meter.is-spicy .meter-fare { color: #FFD76A; }
-.meter.is-absurd .meter-fare { color: #FF8B6A; }
-
-@keyframes meter-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.82; }
-}
-
-@keyframes meter-pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
+/* ---------- toast ---------- */
 
 .toast {
   position: fixed;
@@ -369,29 +265,6 @@ button.pill-btn {
 }
 
 .toast[hidden] { display: none !important; }
-
-.credit {
-  position: fixed;
-  left: 50%;
-  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
-  translate: -50% 0;
-  z-index: 15;
-  margin: 0;
-  width: min(420px, calc(100vw - 32px));
-  text-align: center;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: rgba(255, 248, 232, 0.42);
-  pointer-events: none;
-  display: none;
-}
-
-.credit code {
-  font-family: var(--font-meter);
-  font-size: 10px;
-  color: rgba(245, 197, 24, 0.7);
-}
 
 /* ---------- player ---------- */
 
@@ -613,7 +486,7 @@ button.pill-btn {
   .brand {
     margin-top: 0;
     padding-inline: 10px;
-    margin-bottom: 34vh;
+    margin-bottom: 22vh;
   }
   .brand-mark { font-size: clamp(2.6rem, 14vw, 3.8rem); }
   .brand-mark::after { margin-top: 10px; height: 3px; width: min(140px, 36vw); }
@@ -628,12 +501,6 @@ button.pill-btn {
   .pill { padding: 10px; }
   .pill-label, .pill-arrow { display: none; }
 
-  .meter {
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-    width: min(200px, calc(100vw - 40px));
-    padding: 9px 12px 10px;
-  }
-  .meter-value { font-size: 1.7rem; }
 
   .player {
     gap: 10px;
@@ -671,11 +538,6 @@ button.pill-btn {
   .brand-mark { font-size: clamp(2.4rem, 15vw, 3.2rem); }
   .brand-line { font-size: 0.86rem; max-width: 15.5rem; }
 
-  .meter {
-    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
-    width: min(184px, calc(100vw - 32px));
-  }
-  .meter-route { max-width: 7.5rem; }
 
   .player {
     gap: 8px;
@@ -699,7 +561,6 @@ button.pill-btn {
   .brand { margin-bottom: 0; margin-top: -2vh; }
   .brand-line { display: none; }
   .brand-mark { font-size: clamp(2rem, 10vh, 3rem); }
-  .meter { display: none; }
   .player { padding-block: 8px; }
   .disc { width: 44px; height: 44px; }
 }
@@ -709,12 +570,11 @@ button.pill-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .disc, .clock .colon, .hero-bg, .brand, .player, .scrim, .meter, .meter.is-running .meter-value {
+  .disc, .clock .colon, .hero-bg, .brand, .player, .scrim {
     animation: none !important;
   }
   .hero-bg { scale: 1; }
   .hero-video { display: none; }
   .brand, .player { opacity: 1; translate: 0 0; filter: none; }
-  .meter { opacity: 1; translate: -50% 0; }
   .scrim { opacity: 1; }
 }

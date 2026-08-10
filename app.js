@@ -19,37 +19,13 @@ const TRACKS = (window.TRACKS || []).map((t) => ({
 const BRAND = window.HYD_AUTO || {
   name: "HYD AUTO",
   album: "Hyderabad Auto",
-  tagline: "Speaker full. Meter running. Charminar left.",
+  tagline: "Speaker full. Charminar left.",
   shareText: "HYD AUTO — gaane that only slap in a Hyderabad auto.",
 };
 
 if (!TRACKS.length) {
   console.error("HYD AUTO: tracks.js is empty. Add songs to window.TRACKS.");
 }
-
-const ROUTES = [
-  "Charminar → Abids",
-  "Abids → Koti",
-  "Koti → Nampally",
-  "Madhapur → somehow",
-  "Mehdipatnam → Tolichowki",
-  "Secunderabad → Paradise",
-  "Old City → left side",
-  "Gachibowli → traffic",
-];
-
-const FARE_NOTES = [
-  "Waiting for side…",
-  "Bhai, AC mat maang",
-  "Shared only — squeeze in",
-  "Meter? What meter?",
-  "₹50 fixed? chalega",
-  "Madhapur for this??",
-  "Phone pe Google Maps hai kya",
-  "Horn OK Please",
-  "One minute brother",
-  "Traffic full, sorry",
-];
 
 /* ---------- clock ---------- */
 
@@ -67,74 +43,6 @@ function tickClock() {
 
 tickClock();
 setInterval(tickClock, 1000);
-
-/* ---------- meter fantasy ---------- */
-
-const meterEl = el("meter");
-const meterValue = el("meter-value");
-const meterRoute = el("meter-route");
-const meterNote = el("meter-note");
-
-let fare = 30;
-let meterTimer = null;
-let routeIndex = 0;
-let noteIndex = 0;
-
-function setFare(n) {
-  fare = Math.max(30, Math.round(n));
-  meterValue.textContent = String(fare);
-  meterEl.classList.toggle("is-spicy", fare >= 150);
-  meterEl.classList.toggle("is-absurd", fare >= 280);
-  meterEl.classList.remove("is-tick");
-  void meterEl.offsetWidth;
-  meterEl.classList.add("is-tick");
-}
-
-function tickMeter() {
-  /* Irregular jumps — feels like a real dodgy meter, not a stopwatch. */
-  const jump = Math.random() < 0.18 ? 8 + Math.floor(Math.random() * 20) : 2 + Math.floor(Math.random() * 4);
-  setFare(fare + jump);
-
-  if (Math.random() < 0.28) {
-    routeIndex = (routeIndex + 1) % ROUTES.length;
-    meterRoute.textContent = ROUTES[routeIndex];
-  }
-  if (Math.random() < 0.24) {
-    noteIndex = (noteIndex + 1) % FARE_NOTES.length;
-    meterNote.textContent = FARE_NOTES[noteIndex];
-  }
-
-  if (fare > 420) {
-    setFare(30 + Math.floor(Math.random() * 12));
-    meterNote.textContent = "New trip. Same traffic.";
-  }
-}
-
-function startMeter() {
-  meterEl.classList.add("is-running");
-  if (meterTimer) return;
-  meterNote.textContent = FARE_NOTES[Math.floor(Math.random() * FARE_NOTES.length)];
-  /* Kick once immediately so play → fare is obvious in recordings. */
-  tickMeter();
-  meterTimer = setInterval(tickMeter, 750);
-}
-
-function stopMeter() {
-  if (meterTimer) {
-    clearInterval(meterTimer);
-    meterTimer = null;
-  }
-  meterEl.classList.remove("is-running");
-}
-
-function resetMeterSoft() {
-  setFare(30 + Math.floor(Math.random() * 8));
-  routeIndex = Math.floor(Math.random() * ROUTES.length);
-  meterRoute.textContent = ROUTES[routeIndex];
-  meterNote.textContent = "Waiting for side…";
-}
-
-resetMeterSoft();
 
 /* ---------- deep links + share ---------- */
 
@@ -205,7 +113,6 @@ async function shareRide() {
       return;
     } catch (err) {
       if (err && err.name === "AbortError") return;
-      /* fall through to clipboard */
     }
   }
 
@@ -272,8 +179,6 @@ function renderTrack() {
   document.title = `${BRAND.name} — ${t.title}`;
   el("yt-link").href = `https://www.youtube.com/watch?v=${t.youtubeId}`;
 
-  /* OG-ish document description for link previews that re-scrape rarely,
-     but keeps the tab / share sheet on-brand. */
   const desc = document.querySelector('meta[name="description"]');
   if (desc) desc.setAttribute("content", `${t.title} · ${BRAND.tagline}`);
 
@@ -313,7 +218,6 @@ function loadTrack(i) {
   if (!TRACKS.length) return;
   index = (i + TRACKS.length) % TRACKS.length;
   renderTrack();
-  resetMeterSoft();
   if (ready) player.loadVideoById(TRACKS[index].youtubeId);
 }
 
@@ -323,8 +227,6 @@ window.addEventListener("popstate", () => {
   const next = indexFromUrl();
   if (next !== index) loadTrack(next);
 });
-
-/* YouTube IFrame API — keep our iframe so picture-in-picture stays denied. */
 
 function embedUrl(youtubeId) {
   const params = new URLSearchParams({
@@ -343,7 +245,6 @@ function onPlaying(isPlaying) {
   if (isPlaying) {
     card.classList.add("is-playing");
     playBtn.setAttribute("aria-label", "Pause");
-    startMeter();
     if (window.HydAmbient) {
       window.HydAmbient.start();
       window.HydAmbient.duck(true);
@@ -351,7 +252,6 @@ function onPlaying(isPlaying) {
   } else {
     card.classList.remove("is-playing");
     playBtn.setAttribute("aria-label", "Play");
-    stopMeter();
     if (window.HydAmbient) window.HydAmbient.duck(false);
   }
 
@@ -415,7 +315,6 @@ playBtn.addEventListener("click", async () => {
     player.pauseVideo();
     onPlaying(false);
   } else {
-    /* Optimistic UI — YT events can lag behind the first gesture. */
     onPlaying(true);
     player.playVideo();
   }
