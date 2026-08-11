@@ -45,13 +45,13 @@ export function asphaltTexture() {
     const g = c.getContext("2d");
     const rng = makeRng(0x4a5f11);
 
-    g.fillStyle = "#2b2724";
+    g.fillStyle = "#6f6a60";
     g.fillRect(0, 0, size, size);
 
     // Aggregate grain
     for (let i = 0; i < 26000; i++) {
       const v = rng.range(0.06, 0.3);
-      g.fillStyle = `rgba(${210 * v + 30},${200 * v + 28},${190 * v + 26},${rng.range(0.15, 0.5)})`;
+      g.fillStyle = `rgba(${200 * v + 74},${192 * v + 70},${182 * v + 62},${rng.range(0.15, 0.5)})`;
       g.fillRect(rng.range(0, size), rng.range(0, size), rng.range(1, 2.6), rng.range(1, 2.6));
     }
 
@@ -77,6 +77,25 @@ export function asphaltTexture() {
         g.lineTo(x, y);
       }
       g.stroke();
+    }
+
+    /* Lane paint. U runs across the carriageway and V repeats every 8 m, so
+       a dashed stripe at u = 0.5 lands exactly on the centreline. Without this
+       the road is an undifferentiated slab and you can't tell where it is. */
+    g.fillStyle = "rgba(240,232,205,0.82)";
+    const dash = size / 4;
+    for (let i = 0; i < 2; i++) {
+      g.fillRect(size / 2 - 11, i * dash * 2 + dash * 0.35, 22, dash);
+    }
+
+    // Edge lines, scuffed so they don't read as fresh paint.
+    g.fillStyle = "rgba(232,224,198,0.5)";
+    g.fillRect(12, 0, 14, size);
+    g.fillRect(size - 26, 0, 14, size);
+    for (let i = 0; i < 200; i++) {
+      g.fillStyle = `rgba(43,39,36,${rng.range(0.25, 0.7)})`;
+      g.fillRect(rng.chance(0.5) ? rng.range(10, 26) : rng.range(size - 26, size - 10),
+                 rng.range(0, size), 16, rng.range(4, 22));
     }
 
     return toTexture(c, { repeat: [1, 1], aniso: 8 });

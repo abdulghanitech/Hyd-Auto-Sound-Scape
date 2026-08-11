@@ -34,8 +34,16 @@ const CONFIG = {
     // both on the centreline made the driver's head fill the whole frame — in
     // the reference art his shoulder occupies the left third and the road is
     // visible past him.
-    offset: new THREE.Vector3(0.34, 1.2, -0.86),
-    lookHeight: 1.06,
+    // Forward of the rear bench and just inboard of the right frame rail. Sat
+    // further back and further right, the canopy's inner surface wrapped over
+    // 60% of the frame; here it caps the top the way the roof does in the
+    // reference photo, leaving the road visible past the driver.
+    // Local +X is the vehicle's LEFT (right = forward × up = -X), and with the
+    // camera looking down +Z, screen-left maps to +X. So to reproduce the
+    // reference framing — passenger seated right, driver's shoulder in the left
+    // of frame — the camera goes to -X and the driver sits at a greater X.
+    offset: new THREE.Vector3(-0.22, 1.24, -0.55),
+    lookHeight: 1.1,
     hFov: 68,
     fovGain: 4,
     rollShare: 1, // rides the body exactly — it IS in the body

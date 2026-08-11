@@ -72,6 +72,14 @@ export class VehicleState {
   reset(position, yaw = 0) {
     this.position.copy(position);
     this.yaw = yaw;
+
+    // Recompute the basis here too. stepVehicle() normally maintains these, but
+    // it doesn't run on the title screen — and the camera aims using `forward`,
+    // so leaving it at its default pointed the opening shot away from the
+    // landmark the auto was deliberately parked facing.
+    this.forward.set(Math.sin(yaw), 0, Math.cos(yaw));
+    this.right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+
     this.speed = 0;
     this.lateralVel = 0;
     this.steer = 0;

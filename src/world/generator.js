@@ -7,7 +7,7 @@ import { Crowd, Pigeons } from "./crowd.js";
 import { Traffic } from "./traffic.js";
 import { GlowSprites, WetSmears } from "./reflections.js";
 import {
-  buildSky, buildEnvironment, buildMotes, buildGodRays, buildWater,
+  buildSky, buildEnvironment, buildMotes, buildWater,
   applyFog, buildLights, enableSunShadows,
 } from "./atmosphere.js";
 import { makeRng } from "./rng.js";
@@ -104,7 +104,7 @@ export class WorldGenerator {
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(600, 32),
       new THREE.MeshStandardMaterial({
-        color: this.theme.id === "night" ? 0x0d1017 : 0x4a4136,
+        color: this.theme.id === "night" ? 0x11151c : 0x7a6a55,
         roughness: 1,
       }),
     );
@@ -218,9 +218,6 @@ export class WorldGenerator {
 
     this.motes = buildMotes(this.tier.motes, this.theme);
     if (this.motes) this.scene.add(this.motes);
-
-    this.godRays = buildGodRays(this.theme);
-    if (this.godRays) this.scene.add(this.godRays);
   }
 
   /* ---------------- runtime ---------------- */
@@ -276,8 +273,6 @@ export class WorldGenerator {
       this.motes.material.uniforms.uTime.value = elapsed;
       this.motes.material.uniforms.uOrigin.value.copy(cameraPos);
     }
-
-    if (this.godRays) this.godRays.position.set(cameraPos.x, 0, cameraPos.z);
 
     // Street lighting breathes on the beat — subtle, and only the glow halos,
     // never the geometry, so nothing appears to physically move.

@@ -83,8 +83,10 @@ export class Crowd {
       const hw = path.halfWidthAt(path.distanceToT(d));
 
       this.dist[i] = d;
-      // Walk on the footpath, not the road.
-      this.lateral[i] = side * (hw + 0.6 + rng.range(0, 2.2));
+      // Walk on the footpath, well clear of the kerb. Starting at +0.6 m put
+      // pedestrians close enough to the carriageway that one could end up
+      // standing inside the chase camera's boom, blocking the view of the auto.
+      this.lateral[i] = side * (hw + 1.5 + rng.range(0, 1.9));
       this.speed[i] = rng.range(0.7, 1.5) * (rng.chance(0.5) ? 1 : -1);
       this.phase[i] = rng.range(0, Math.PI * 2);
       this.dir[i] = side;

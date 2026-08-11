@@ -186,43 +186,6 @@ export function buildMotes(count, theme) {
   return points;
 }
 
-/* ------------------------------------------------------------- god rays -- */
-
-/**
- * Six big additive quads fanned toward the camera from the sun's direction.
- * Combined with bloom this reads as volumetric light for essentially nothing.
- *
- * depthWrite:false + a high renderOrder is load-bearing — get it wrong and the
- * rays punch straight through buildings.
- */
-export function buildGodRays(theme) {
-  if (!theme.godRays) return null;
-
-  const group = new THREE.Group();
-  const dir = sunDirection(theme);
-  const mat = new THREE.MeshBasicMaterial({
-    color: theme.sky.sunColor,
-    transparent: true,
-    opacity: 0.05,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false,
-    side: THREE.DoubleSide,
-  });
-
-  for (let i = 0; i < 6; i++) {
-    const w = 12 + i * 9;
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, 150), mat);
-    plane.position.copy(dir).multiplyScalar(120);
-    plane.position.y = 30 + i * 4;
-    plane.rotation.z = (i - 2.5) * 0.09;
-    plane.renderOrder = 10;
-    group.add(plane);
-  }
-
-  group.frustumCulled = false;
-  return group;
-}
 
 /* ---------------------------------------------------------------- water -- */
 

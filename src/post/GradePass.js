@@ -70,7 +70,7 @@ const GradeShader = {
       // Halation: bleed warmth out of the brightest areas, the way film does
       // around a light source. Cheap stand-in for a proper glow pass.
       float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-      float hot = smoothstep(0.72, 1.0, luma);
+      float hot = smoothstep(0.84, 1.0, luma);
       color += vec3(0.9, 0.45, 0.16) * hot * uHalation;
 
       // Tonal grade

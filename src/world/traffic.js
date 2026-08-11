@@ -152,8 +152,13 @@ export class Traffic {
       }
 
       // And for the player, if they're in the way.
+      //
+      // The standoff is 9 m rather than a realistic 2.5 m because the chase
+      // camera sits 5.5 m behind the auto: a tailgating agent would otherwise
+      // brake to a "correct" distance that puts it inside the camera, and the
+      // player spends the whole ride looking at a motorcyclist's head.
       const dPlayer = this.path.deltaDistance(a.dist, playerDist);
-      if (dPlayer > 0 && dPlayer < 14) gap = Math.min(gap, dPlayer - 2.5);
+      if (dPlayer > 0 && dPlayer < 20) gap = Math.min(gap, dPlayer - 9);
 
       const desired = gap < 8 ? a.target * Math.max(0, (gap - 2.5) / 5.5) : a.target;
       a.speed += (desired - a.speed) * Math.min(1, dt * 2.4);

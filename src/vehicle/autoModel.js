@@ -68,17 +68,33 @@ function bodyProfile() {
   return s;
 }
 
+/**
+ * The hood: flat and high over the cabin, dropping only at the back.
+ *
+ * This was a circular crescent, which cannot express that shape — an arc wide
+ * enough to close the rear also droops its front lip down to y ≈ 0.8, i.e.
+ * below the driver's eye line, which walled off the entire forward view from
+ * the POV cameras. An explicit profile costs a few more points and behaves.
+ *
+ * Roof at y = 1.72 matches the real Bajaj RE's 1.70 m height.
+ */
 function canopyProfile() {
   const s = new THREE.Shape();
-  const cz = -0.12;
-  const cy = 0.92;
-  const rOuter = 0.78;
-  const rInner = 0.72;
-  const a0 = THREE.MathUtils.degToRad(12);
-  const a1 = THREE.MathUtils.degToRad(168);
 
-  s.absarc(cz, cy, rOuter, a0, a1, false);
-  s.absarc(cz, cy, rInner, a1, a0, true);
+  // Outer skin, front lip → over the cabin → down the back
+  s.moveTo(0.72, 1.62);
+  s.quadraticCurveTo(0.60, 1.72, 0.45, 1.73);
+  s.lineTo(-0.95, 1.73);
+  s.quadraticCurveTo(-1.28, 1.72, -1.34, 1.30);
+  s.lineTo(-1.36, 1.02);
+
+  // Inner skin back up and forward, giving the shell real thickness
+  s.lineTo(-1.29, 1.02);
+  s.lineTo(-1.27, 1.31);
+  s.quadraticCurveTo(-1.22, 1.66, -0.95, 1.67);
+  s.lineTo(0.45, 1.67);
+  s.quadraticCurveTo(0.57, 1.66, 0.66, 1.57);
+
   s.closePath();
   return s;
 }
@@ -140,8 +156,9 @@ export function createAuto({ tier, playerControlled = true } = {}) {
   // Side frame tubes — the yellow bars that frame the view in POV cameras.
   // This silhouette is the signature of the reference art.
   for (const side of [-1, 1]) {
-    const post = new THREE.CylinderGeometry(0.035, 0.035, 0.72, 8);
-    post.translate(side * (width / 2 - 0.02), 1.28, 0.9);
+    // Runs from the body up to the new roof line at y = 1.73.
+    const post = new THREE.CylinderGeometry(0.035, 0.035, 0.86, 8);
+    post.translate(side * (width / 2 - 0.02), 1.3, 0.9);
     yellowParts.push(post);
 
     const rear = new THREE.CylinderGeometry(0.032, 0.032, 0.5, 8);
@@ -238,7 +255,7 @@ export function createAuto({ tier, playerControlled = true } = {}) {
   // Meter — the fare literally ticks up in 3D. Best delight-per-line in the model.
   const meter = makeMeterTexture();
   const meterBox = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.11, 0.05), materials.ink);
-  meterBox.position.set(0.32, 1.06, 0.86);
+  meterBox.position.set(-0.3, 1.06, 0.86);
   const meterFace = new THREE.Mesh(
     new THREE.PlaneGeometry(0.17, 0.095),
     new THREE.MeshBasicMaterial({ map: meter.texture }),
@@ -252,16 +269,16 @@ export function createAuto({ tier, playerControlled = true } = {}) {
     new THREE.CylinderGeometry(0.012, 0.012, 0.16, 6),
     materials.chrome,
   );
-  mirrorStalk.position.set(0.44, 1.36, 0.92);
+  mirrorStalk.position.set(-0.44, 1.36, 0.92);
   bodyPivot.add(mirrorStalk);
 
   const mirror = new THREE.Mesh(new THREE.CircleGeometry(0.075, 14), materials.chrome);
-  mirror.position.set(0.44, 1.45, 0.9);
+  mirror.position.set(-0.44, 1.45, 0.9);
   mirror.rotation.y = Math.PI;
   bodyPivot.add(mirror);
 
   const garlandPivot = new THREE.Group();
-  garlandPivot.position.set(0.44, 1.44, 0.9);
+  garlandPivot.position.set(-0.44, 1.44, 0.9);
   bodyPivot.add(garlandPivot);
 
   const garland = buildGarland();
@@ -287,9 +304,9 @@ export function createAuto({ tier, playerControlled = true } = {}) {
 
   const driver = playerControlled ? buildDriver() : null;
   if (driver) {
-    // Offset to the left so the back-seat camera (which sits right) sees past
-    // his shoulder rather than into the back of his head.
-    driver.position.set(-0.3, 0.54, 0.46);
+    // Sits at a greater local X than the back-seat camera, which is what puts
+    // his shoulder in the left third of the POV frame instead of dead centre.
+    driver.position.set(0.12, 0.54, 0.46);
     bodyPivot.add(driver);
   }
 
@@ -475,33 +492,52 @@ function buildFringe(width) {
   return mesh;
 }
 
-/** Low-poly seated driver. Only the shoulders and head ever read — that's the bg.jpg framing. */
+/**
+ * Low-poly driver, genuinely SEATED.
+ *
+ * The first version was a standing figure placed on the seat, which put his
+ * head at 2.0 m — a third of a metre above the roof line, so from the chase
+ * camera he appeared to be standing through the canopy. Origin here is the
+ * seat surface, and the whole figure is ~0.8 m tall from there.
+ */
 function buildDriver() {
   const g = new THREE.Group();
-  const shirt = new THREE.MeshStandardMaterial({ color: 0xb99a5e, roughness: 0.85 });
+  const shirt = new THREE.MeshStandardMaterial({ color: 0x8a7550, roughness: 0.88 });
   const skin = new THREE.MeshStandardMaterial({ color: 0x8d5a3b, roughness: 0.7 });
   const hair = new THREE.MeshStandardMaterial({ color: 0x191410, roughness: 0.9 });
 
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.3, 4, 10), shirt);
-  torso.position.y = 0.28;
-  torso.rotation.x = 0.18;
+  // Thighs, forward and horizontal
+  const thighs = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.3, 4, 8), shirt);
+  thighs.rotation.x = Math.PI / 2;
+  thighs.position.set(0, 0.1, 0.2);
+  g.add(thighs);
+
+  // Shins, dropping to the floor pan
+  const shins = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.26, 4, 8), shirt);
+  shins.position.set(0, -0.06, 0.36);
+  g.add(shins);
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.185, 0.32, 4, 10), shirt);
+  torso.position.set(0, 0.34, -0.02);
+  torso.rotation.x = 0.14;
   g.add(torso);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 12), skin);
-  head.position.set(0, 0.62, 0.02);
+  head.position.set(0, 0.66, 0.01);
   g.add(head);
 
   const cap = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
     hair,
   );
-  cap.position.set(0, 0.635, 0.01);
+  cap.position.set(0, 0.675, 0.0);
   g.add(cap);
 
+  // Arms reaching forward to the handlebar
   for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.3, 4, 8), shirt);
-    arm.position.set(side * 0.2, 0.34, 0.16);
-    arm.rotation.set(-0.9, 0, side * 0.18);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.052, 0.3, 4, 8), shirt);
+    arm.position.set(side * 0.19, 0.4, 0.18);
+    arm.rotation.set(-1.05, 0, side * 0.16);
     g.add(arm);
   }
 

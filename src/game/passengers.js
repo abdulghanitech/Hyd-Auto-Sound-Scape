@@ -44,12 +44,15 @@ export class Passengers {
     this.hailGroup = new THREE.Group();
     this.hailGroup.visible = false;
 
+    // Additive + DoubleSide means front and back faces both contribute, so the
+    // effective opacity is double what's set here. Kept low deliberately: at
+    // full strength this reads as a hard white pillar rather than a soft marker.
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(1.1, 1.1, 9, 14, 1, true),
       new THREE.MeshBasicMaterial({
         color: 0xf5c518,
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.075,
         side: THREE.DoubleSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
@@ -59,11 +62,13 @@ export class Passengers {
     beam.position.y = 4.5;
     this.hailGroup.add(beam);
 
-    // The upper part renders through buildings so you can always find them.
+    // A short cap that renders through buildings, so you can always find them
+    // in the Old City lanes without the whole column punching through walls.
     const tip = beam.clone();
     tip.material = beam.material.clone();
     tip.material.depthTest = false;
-    tip.scale.set(0.55, 0.6, 0.55);
+    tip.material.opacity = 0.1;
+    tip.scale.set(0.5, 0.45, 0.5);
     tip.position.y = 10.5;
     tip.renderOrder = 12;
     this.hailGroup.add(tip);
