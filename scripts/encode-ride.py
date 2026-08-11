@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Encode Hyderabad auto windshield travel loops from illustrated keyframes.
+"""Encode Hyderabad auto windshield travel loops.
 
-Polish goals:
-- Cabin locked; windshield content dollies forward
-- Color-match plates to k01 so morphs don't flash
-- End on k01 at zoom 1.0 with a long ease for a soft loop seam
-- Bump amplitude eases near the loop point
+Anti-clone rule: never lerp two traffic plates at once for long.
+Hold one plate + dolly, then a short crossfade to the next.
+Cabin stays locked to k01 the whole time.
 """
 
 from __future__ import annotations
@@ -41,14 +39,10 @@ def load(path: Path, w: int, h: int) -> np.ndarray:
 
 
 def match_color(src: np.ndarray, ref: np.ndarray) -> np.ndarray:
-    """Simple per-channel mean/std match toward ref (keeps mood consistent)."""
     out = src.copy()
     for c in range(3):
-        s = src[..., c]
-        r = ref[..., c]
-        s_std = s.std() + 1e-3
-        r_std = r.std() + 1e-3
-        out[..., c] = (s - s.mean()) * (r_std / s_std) + r.mean()
+        s, r = src[..., c], ref[..., c]
+        out[..., c] = (s - s.mean()) * ((r.std() + 1e-3) / (s.std() + 1e-3)) + r.mean()
     return np.clip(out, 0, 255)
 
 
@@ -80,17 +74,7 @@ def windshield_mask(h: int, w: int, top, bottom, left, right) -> np.ndarray:
     mask *= np.clip((bottom[0] - ys) / bottom[1], 0, 1)
     mask *= np.clip((xs - left[0]) / left[1], 0, 1)
     mask *= np.clip((right[0] - xs) / right[1], 0, 1)
-    # Feather edges so cabin/street join is soft
-    return np.clip(mask, 0, 1) ** 0.72
-
-
-def lerp_plates(plates, t: float) -> np.ndarray:
-    x = t * (len(plates) - 1)
-    i = int(np.floor(x))
-    f = x - i
-    f = f * f * (3 - 2 * f)
-    i2 = min(i + 1, len(plates) - 1)
-    return plates[i] * (1 - f) + plates[i2] * f
+    return np.clip(mask, 0, 1) ** 0.7
 
 
 def smoothstep(t: float) -> float:
@@ -98,10 +82,16 @@ def smoothstep(t: float) -> float:
     return t * t * (3 - 2 * t)
 
 
-def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, crf: int, seconds: float = 16.0) -> None:
+def encode(out_mp4: Path, w: int, h: int, cabin, plates, mask, cy_ratio: float, crf: int, seconds: float = 14.0) -> None:
+    """plates: sequence including return to first. Hold each, short xfade between."""
     fps = 24
     n = int(seconds * fps)
     mask3 = mask[..., None]
+    n_plates = len(plates) - 1  # last equals first for loop
+    # timeline: equal hold slots with short fades; final slot eases to identity
+    fade_frac = 0.12  # of each slot
+    slot = 1.0 / n_plates
+
     proc = subprocess.Popen(
         [
             "ffmpeg",
@@ -135,51 +125,63 @@ def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, c
     )
     assert proc.stdin is not None
 
-    # Timeline:
-    # 0–78%  forward dolly + plate morph toward end plate
-    # 78–100% long ease back to base @ zoom 1.0 (seamless hard-loop)
-    travel_end = 0.78
-
     for fi in range(n):
         u = fi / n
-        if u < travel_end:
-            zprog = u / travel_end
-            # ease-in-out zoom so motion never jerks
-            e = smoothstep(zprog)
-            zoom = 1.0 + 0.10 * e
-            plate_t = e * 0.92  # leave headroom before return
-            bump_scale = 1.0
+        # which slot
+        s = min(int(u / slot), n_plates - 1)
+        local = (u - s * slot) / slot  # 0..1 within slot
+        # zoom creeps forward within each hold, resets gently across fades
+        hold_end = 1.0 - fade_frac
+        if local < hold_end:
+            zprog = local / hold_end
+            zoom = 1.0 + 0.045 * smoothstep(zprog)
+            blend = 0.0
+            a_idx, b_idx = s, s
         else:
-            t = (u - travel_end) / (1.0 - travel_end)
+            t = (local - hold_end) / fade_frac
             ease = smoothstep(t)
-            # From current travel state back to identity
-            zoom = (1.0 + 0.10) * (1 - ease) + 1.0 * ease
-            plate_t = 0.92 * (1 - ease)  # blend back toward first plate
-            bump_scale = 1.0 - 0.85 * ease  # calm the cabin near the seam
+            zoom = 1.045 * (1 - ease) + 1.0 * ease  # settle before next hold
+            blend = ease
+            a_idx, b_idx = s, s + 1
 
-        dy = bump_scale * (2.2 * np.sin(fi * 0.58) + 1.1 * np.sin(fi * 1.37))
-        dx = bump_scale * (1.3 * np.sin(fi * 0.31))
+        bump_scale = 1.0
+        # calm near absolute loop end
+        if u > 0.90:
+            bump_scale = 1.0 - 0.8 * smoothstep((u - 0.90) / 0.10)
 
-        plate = lerp_plates(plates, min(max(plate_t, 0.0), 0.999))
-        exterior = sample(plate, zoom, dx=dx * 0.32, dy=dy * 0.28, cy_ratio=cy_ratio)
+        dy = bump_scale * (2.0 * np.sin(fi * 0.55) + 1.0 * np.sin(fi * 1.33))
+        dx = bump_scale * (1.1 * np.sin(fi * 0.29))
+
+        if blend <= 0:
+            plate = plates[a_idx]
+        else:
+            # SHORT crossfade only — never long multi-plate lerp (that's what cloned the bikes)
+            plate = plates[a_idx] * (1 - blend) + plates[b_idx] * blend
+
+        exterior = sample(plate, zoom, dx=dx * 0.28, dy=dy * 0.24, cy_ratio=cy_ratio)
         interior = sample(
-            base,
-            1.0 + 0.0025 * np.sin(fi * 0.42) * bump_scale,
-            dx=dx * 0.10,
-            dy=dy * 0.22,
+            cabin,
+            1.0 + 0.002 * np.sin(fi * 0.4) * bump_scale,
+            dx=dx * 0.08,
+            dy=dy * 0.18,
             cy_ratio=cy_ratio,
         )
         frame = interior * (1 - mask3) + exterior * mask3
-        frame = sample(frame, 1.0, dy=dy * 0.16, cy_ratio=cy_ratio)
+        frame = sample(frame, 1.0, dy=dy * 0.14, cy_ratio=cy_ratio)
 
-        # Final 8% crossfade whole frame toward exact base still → invisible loop cut
-        if u > 0.92:
-            fade = smoothstep((u - 0.92) / 0.08)
-            frame = frame * (1 - fade) + base * fade
+        # snap to cabin still at the very end so hard-loop is invisible
+        if u > 0.94:
+            fade = smoothstep((u - 0.94) / 0.06)
+            # crossfade toward first plate at zoom 1 (not cabin alone — keep street)
+            end_ext = sample(plates[0], 1.0, cy_ratio=cy_ratio)
+            end_frame = interior * (1 - mask3) + end_ext * mask3
+            # prefer exact cabin+plate0 composite
+            end_frame = cabin * (1 - mask3) + end_ext * mask3
+            frame = frame * (1 - fade) + end_frame * fade
 
         proc.stdin.write(np.clip(frame, 0, 255).astype(np.uint8).tobytes())
         if fi % 48 == 0:
-            print(f"{out_mp4.name} frame {fi}/{n} zoom={zoom:.3f} plate_t={plate_t:.3f}")
+            print(f"{out_mp4.name} f={fi}/{n} slot={s} zoom={zoom:.3f} blend={blend:.2f}")
 
     proc.stdin.close()
     if proc.wait() != 0:
@@ -187,42 +189,46 @@ def encode(out_mp4: Path, w: int, h: int, base, plates, mask, cy_ratio: float, c
     print(f"wrote {out_mp4} ({out_mp4.stat().st_size} bytes)")
 
 
-def main() -> None:
-    for name in ("k01.jpg", "k02.jpg", "k03.jpg", "k04.jpg", "k05.jpg", "p01.jpg"):
-        if not (KF / name).exists():
-            sys.exit(f"missing {KF / name}")
-
-    # Landscape
-    w, h = 1600, 900
-    base = load(KF / "k01.jpg", w, h)
-    plates = [match_color(load(KF / f"k{i}.jpg", w, h), base) for i in ("01", "02", "03", "04", "05")]
-    plates[0] = base
-    plates.append(base)
-    mask = windshield_mask(h, w, (0.07, 0.11), (0.80, 0.12), (0.08, 0.11), (0.86, 0.12))
-    raw = ROOT / "bg-raw.mp4"
-    encode(raw, w, h, base, plates, mask, 0.46, 20, 16)
+def compress(src: Path, dst: Path, crf: str) -> None:
     subprocess.check_call(
         [
             "ffmpeg",
             "-y",
             "-i",
-            str(raw),
+            str(src),
             "-an",
             "-c:v",
             "libx264",
             "-pix_fmt",
             "yuv420p",
             "-crf",
-            "23",
+            crf,
             "-preset",
             "slow",
             "-movflags",
             "+faststart",
-            str(ROOT / "bg.mp4"),
+            str(dst),
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+
+def main() -> None:
+    for name in ("k01.jpg", "k02.jpg", "k03.jpg", "k04.jpg", "p01.jpg"):
+        if not (KF / name).exists():
+            sys.exit(f"missing {KF / name}")
+
+    # Landscape — 4 sparse plates + return
+    w, h = 1600, 900
+    cabin = load(KF / "k01.jpg", w, h)
+    plates = [match_color(load(KF / f"k{i}.jpg", w, h), cabin) for i in ("01", "02", "03", "04")]
+    plates[0] = cabin
+    plates.append(cabin)
+    mask = windshield_mask(h, w, (0.06, 0.10), (0.80, 0.11), (0.07, 0.10), (0.87, 0.11))
+    raw = ROOT / "bg-raw.mp4"
+    encode(raw, w, h, cabin, plates, mask, 0.46, 19, 14)
+    compress(raw, ROOT / "bg.mp4", "23")
     raw.unlink(missing_ok=True)
     subprocess.check_call(
         [
@@ -242,34 +248,14 @@ def main() -> None:
 
     # Portrait
     w, h = 1080, 1920
-    base = load(KF / "p01.jpg", w, h)
-    mid = [match_color(load(KF / f"k{i}.jpg", w, h), base) for i in ("02", "03", "04", "05")]
-    plates = [base] + mid + [base]
-    mask = windshield_mask(h, w, (0.09, 0.11), (0.74, 0.13), (0.07, 0.11), (0.90, 0.10))
+    cabin = load(KF / "p01.jpg", w, h)
+    # reuse landscape mids cropped into portrait as mild variation + return
+    mids = [match_color(load(KF / f"k{i}.jpg", w, h), cabin) for i in ("02", "03", "04")]
+    plates = [cabin] + mids + [cabin]
+    mask = windshield_mask(h, w, (0.08, 0.10), (0.74, 0.12), (0.06, 0.10), (0.91, 0.09))
     raw = ROOT / "bg-portrait-raw.mp4"
-    encode(raw, w, h, base, plates, mask, 0.40, 21, 16)
-    subprocess.check_call(
-        [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(raw),
-            "-an",
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
-            "-crf",
-            "24",
-            "-preset",
-            "slow",
-            "-movflags",
-            "+faststart",
-            str(ROOT / "bg-portrait.mp4"),
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    encode(raw, w, h, cabin, plates, mask, 0.40, 20, 14)
+    compress(raw, ROOT / "bg-portrait.mp4", "24")
     raw.unlink(missing_ok=True)
     subprocess.check_call(
         [
