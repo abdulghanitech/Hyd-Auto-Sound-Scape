@@ -1,0 +1,217 @@
+/* Design tokens carried over verbatim from the original site — this is the
+   continuity that makes the game read as the same product. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --edge: 20px;
+  --ink: #12100E;
+  --paper: #FFF8E8;
+  --auto-yellow: #F5C518;
+  --auto-yellow-deep: #D4A40A;
+  --dust: rgba(255, 232, 186, 0.72);
+  --shadow-text: 0 1px 8px rgba(0, 0, 0, 0.55);
+  --font-ui: "Figtree", "Segoe UI", sans-serif;
+  --font-brand: "Syne", "Figtree", sans-serif;
+  --glass: rgba(22, 18, 12, 0.55);
+  --glass-line: rgba(245, 197, 24, 0.22);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+body {
+  font-family: var(--font-ui);
+  color: #fff;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+:focus-visible { outline: 2px solid var(--auto-yellow); outline-offset: 3px; }
+
+.noscript {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--dust);
+  background: var(--ink);
+}
+
+/* ---------- boot / title screen ---------- */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--edge) + env(safe-area-inset-top)) var(--edge)
+           calc(var(--edge) + env(safe-area-inset-bottom));
+  transition: opacity 700ms ease;
+}
+
+.boot.is-gone { opacity: 0; pointer-events: none; }
+
+.boot-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--ink) url("/bg.jpg") 50% 45% / cover no-repeat;
+  /* The old site's hero, held until the live render is ready to cross-fade in. */
+  transition: opacity 700ms ease;
+}
+
+.boot.is-live .boot-bg { opacity: 0; }
+
+.boot-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(18,16,14,0.55) 0%, rgba(18,16,14,0.12) 40%, rgba(18,16,14,0.78) 100%),
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255,170,60,0.16), transparent 72%);
+}
+
+.boot-inner {
+  position: relative;
+  text-align: center;
+  max-width: 30rem;
+}
+
+.brand-mark {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-weight: 800;
+  font-size: clamp(3.2rem, 12vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  color: var(--paper);
+  text-shadow:
+    0 2px 0 rgba(18,16,14,0.25),
+    0 10px 40px rgba(0,0,0,0.45),
+    0 0 60px rgba(245,197,24,0.18);
+}
+
+.brand-mark::after {
+  content: "";
+  display: block;
+  width: min(180px, 40vw);
+  height: 4px;
+  margin: 14px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--auto-yellow), transparent);
+  box-shadow: 0 0 18px rgba(245,197,24,0.55);
+}
+
+.brand-line {
+  margin: 18px auto 0;
+  max-width: 22rem;
+  font-size: clamp(0.95rem, 2.4vw, 1.1rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--dust);
+  text-shadow: var(--shadow-text);
+}
+
+.boot-progress {
+  width: min(240px, 60vw);
+  height: 3px;
+  margin: 30px auto 0;
+  border-radius: 999px;
+  background: rgba(255,248,232,0.16);
+  overflow: hidden;
+}
+
+.boot-bar {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--auto-yellow);
+  box-shadow: 0 0 12px rgba(245,197,24,0.7);
+  transition: width 280ms ease;
+}
+
+.boot-status {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--dust);
+  min-height: 1.2em;
+}
+
+.start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+  padding: 16px 34px;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--font-brand);
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: var(--auto-yellow);
+  box-shadow: 0 8px 30px rgba(245,197,24,0.42);
+  cursor: pointer;
+  animation: pop-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 120ms ease, background 200ms ease;
+}
+
+.start-btn:hover { background: #ffd84a; }
+.start-btn:active { transform: scale(0.96); }
+
+.start-hint {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  color: var(--dust);
+  animation: pop-in 520ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.yt-host {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  :root { --edge: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-btn, .start-hint { animation: none; }
+  .boot, .boot-bg { transition: none; }
+}

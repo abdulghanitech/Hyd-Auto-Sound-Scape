@@ -23,3 +23,6 @@ credentials.json
 .vscode/
 *.swp
 *~
+
+# build output
+dist/

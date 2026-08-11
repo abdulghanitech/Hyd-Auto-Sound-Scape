@@ -1,0 +1,115 @@
+/* Mobile driving controls.
+
+   The steering control is a wide arc hugging the bottom-left bezel rather than
+   a joystick square, because the view is the product and a square parked in the
+   middle of the frame covers the thing people came for. */
+
+.touch {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+
+.touch.is-dim { opacity: 0.25; }
+
+.touch-steer {
+  position: absolute;
+  left: calc(var(--edge) + env(safe-area-inset-left));
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom));
+  width: 176px;
+  height: 82px;
+  pointer-events: auto;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(18, 16, 14, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.touch-steer.is-active {
+  background: rgba(18, 16, 14, 0.52);
+  border-color: rgba(245, 197, 24, 0.4);
+}
+
+.touch-steer-track {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 248, 232, 0.18);
+}
+
+.touch-steer-knob {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--auto-yellow);
+  box-shadow: 0 4px 18px rgba(245, 197, 24, 0.45);
+  transition: transform 120ms ease-out;
+}
+
+.touch-steer.is-active .touch-steer-knob { transition: none; }
+
+.touch-label {
+  position: absolute;
+  bottom: 7px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--dust);
+  pointer-events: none;
+}
+
+.touch-pedals {
+  position: absolute;
+  right: calc(var(--edge) + env(safe-area-inset-right));
+  bottom: calc(var(--edge) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.touch-pedal {
+  pointer-events: auto;
+  touch-action: none;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(18, 16, 14, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--paper);
+  font-family: var(--font-brand);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: transform 100ms ease, background 160ms ease;
+}
+
+.touch-brake { width: 66px; height: 66px; font-size: 11px; }
+.touch-gas {
+  width: 92px;
+  height: 92px;
+  font-size: 16px;
+  background: rgba(245, 197, 24, 0.86);
+  color: var(--ink);
+  border-color: rgba(245, 197, 24, 0.5);
+  box-shadow: 0 6px 26px rgba(245, 197, 24, 0.32);
+}
+
+.touch-pedal.is-active { transform: scale(0.93); }
+.touch-brake.is-active { background: rgba(179, 38, 30, 0.75); }
+
+/* Never show touch controls on a desktop pointer. */
+@media (pointer: fine) {
+  .touch { display: none; }
+}
