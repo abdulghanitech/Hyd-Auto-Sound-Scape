@@ -15,7 +15,8 @@
   },
   "scripts": {
     "start": "npx --yes serve -l 5173 .",
-    "covers": "node scripts/fetch-covers.mjs"
+    "covers": "node scripts/fetch-covers.mjs",
+    "ride": "node scripts/generate-ride.mjs"
   },
   "engines": {
     "node": ">=18"

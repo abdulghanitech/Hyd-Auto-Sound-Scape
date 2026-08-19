@@ -2,15 +2,25 @@
    Audio is a hidden YouTube IFrame player; the UI is ours.
    Song library lives in tracks.js — edit that file to change the setlist. */
 
+function slugify(title) {
+  return String(title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 48);
+}
+
 const TRACKS = (window.TRACKS || []).map((t) => ({
   ...t,
+  slug: t.slug || slugify(t.title),
   cover: t.cover || `/covers/disc/${t.youtubeId}.jpg`,
 }));
 
 const BRAND = window.HYD_AUTO || {
   name: "HYD AUTO",
   album: "Hyderabad Auto",
-  tagline: "Gaane that only slap in a Hyderabad auto.",
+  tagline: "Speaker full. Charminar left.",
+  shareText: "HYD AUTO — gaane that only slap in a Hyderabad auto.",
 };
 
 if (!TRACKS.length) {
@@ -34,6 +44,101 @@ function tickClock() {
 tickClock();
 setInterval(tickClock, 1000);
 
+/* ---------- deep links + share ---------- */
+
+function trackUrl(t) {
+  const url = new URL(location.href);
+  url.search = "";
+  url.searchParams.set("t", t.slug);
+  return url.toString();
+}
+
+function syncUrl(t, replace = true) {
+  const url = trackUrl(t);
+  if (replace) history.replaceState({ slug: t.slug }, "", url);
+  else history.pushState({ slug: t.slug }, "", url);
+}
+
+function indexFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const key = params.get("t") || params.get("v") || "";
+  if (!key) return 0;
+  const bySlug = TRACKS.findIndex((t) => t.slug === key);
+  if (bySlug >= 0) return bySlug;
+  const byId = TRACKS.findIndex((t) => t.youtubeId === key);
+  return byId >= 0 ? byId : 0;
+}
+
+function showToast(msg) {
+  const toast = el("toast");
+  const label = el("share-label");
+  if (toast) {
+    toast.hidden = false;
+    toast.textContent = msg;
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      toast.hidden = true;
+    }, 1700);
+  }
+  if (label) {
+    const prev = label.dataset.prev || label.textContent;
+    label.dataset.prev = prev;
+    label.textContent = msg;
+    clearTimeout(showToast._l);
+    showToast._l = setTimeout(() => {
+      label.textContent = label.dataset.prev || "Share";
+    }, 1700);
+  }
+}
+
+async function shareRide() {
+  const t = TRACKS[index];
+  if (!t) return;
+  const url = trackUrl(t);
+  const payload = {
+    title: `${BRAND.name} — ${t.title}`,
+    text: `${BRAND.shareText || BRAND.tagline}\n▶ ${t.title}`,
+    url,
+  };
+
+  const preferNativeShare =
+    typeof navigator.share === "function" &&
+    (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+      (navigator.userAgentData && navigator.userAgentData.mobile));
+
+  if (preferNativeShare) {
+    try {
+      await navigator.share(payload);
+      showToast("Link sent");
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.setAttribute("readonly", "");
+      ta.style.cssText = "position:fixed;opacity:0;left:0;top:0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (!ok) throw new Error("execCommand copy failed");
+    }
+    showToast("Link copied");
+  } catch {
+    showToast("Copy failed");
+  }
+}
+
+el("share-btn").addEventListener("click", shareRide);
+
 /* ---------- player ---------- */
 
 const card = el("player-card");
@@ -45,7 +150,21 @@ const nextBtn = el("next");
 let player = null;
 let ready = false;
 let scrubbing = false;
-let index = 0;
+let wantPlay = false;
+let index = indexFromUrl();
+
+if (el("brand-line") && BRAND.tagline) {
+  el("brand-line").textContent = BRAND.tagline;
+}
+
+function kickAmbient(duck) {
+  if (!window.HydAmbient) return;
+  Promise.resolve(window.HydAmbient.start())
+    .then(() => {
+      if (duck) window.HydAmbient.duck(true);
+    })
+    .catch(() => {});
+}
 
 function fmt(seconds) {
   if (!isFinite(seconds) || seconds < 0) seconds = 0;
@@ -70,6 +189,10 @@ function renderTrack() {
   document.title = `${BRAND.name} — ${t.title}`;
   el("yt-link").href = `https://www.youtube.com/watch?v=${t.youtubeId}`;
 
+  const desc = document.querySelector('meta[name="description"]');
+  if (desc) desc.setAttribute("content", `${t.title} · ${BRAND.tagline}`);
+
+  syncUrl(t, true);
   publishMediaSession(t);
 
   const solo = TRACKS.length < 2;
@@ -110,11 +233,15 @@ function loadTrack(i) {
 
 renderTrack();
 
-/* YouTube IFrame API — keep our iframe so picture-in-picture stays denied. */
+window.addEventListener("popstate", () => {
+  const next = indexFromUrl();
+  if (next !== index) loadTrack(next);
+});
 
 function embedUrl(youtubeId) {
   const params = new URLSearchParams({
     enablejsapi: "1",
+    autoplay: "1",
     controls: "0",
     disablekb: "1",
     playsinline: "1",
@@ -123,6 +250,62 @@ function embedUrl(youtubeId) {
     origin: location.origin,
   });
   return `https://www.youtube.com/embed/${youtubeId}?${params}`;
+}
+
+/* Browsers often block unmuted autoplay. We try on load; if blocked,
+   the first tap / key anywhere starts the ride. */
+let gestureArmed = false;
+
+function isYtPlaying() {
+  if (!ready || !player || !window.YT) return false;
+  return player.getPlayerState() === YT.PlayerState.PLAYING;
+}
+
+function requestPlayback() {
+  kickAmbient(true);
+  if (!ready || !player) {
+    wantPlay = true;
+    return;
+  }
+  wantPlay = false;
+  player.unMute();
+  player.setVolume(100);
+  player.playVideo();
+}
+
+function armGesturePlay() {
+  if (gestureArmed) return;
+  gestureArmed = true;
+  const unlock = () => {
+    if (isYtPlaying()) return;
+    requestPlayback();
+  };
+  document.addEventListener("pointerdown", unlock, { once: true });
+  document.addEventListener("keydown", unlock, { once: true });
+}
+
+function tryAutoplay() {
+  requestPlayback();
+  /* If the browser blocked it, fall back to one-gesture start. */
+  setTimeout(() => {
+    if (!isYtPlaying()) armGesturePlay();
+  }, 900);
+}
+
+function onPlaying(isPlaying) {
+  if (isPlaying) {
+    card.classList.add("is-playing");
+    playBtn.setAttribute("aria-label", "Pause");
+    kickAmbient(true);
+  } else {
+    card.classList.remove("is-playing");
+    playBtn.setAttribute("aria-label", "Play");
+    if (window.HydAmbient) window.HydAmbient.duck(false);
+  }
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+  }
 }
 
 window.onYouTubeIframeAPIReady = function () {
@@ -136,26 +319,21 @@ window.onYouTubeIframeAPIReady = function () {
       onReady: () => {
         ready = true;
         el("duration").textContent = fmt(player.getDuration());
+        playBtn.disabled = false;
+        tryAutoplay();
       },
       onStateChange: (e) => {
         const S = YT.PlayerState;
         if (e.data === S.PLAYING) {
-          card.classList.add("is-playing");
-          playBtn.setAttribute("aria-label", "Pause");
           el("duration").textContent = fmt(player.getDuration());
-        } else {
-          card.classList.remove("is-playing");
-          playBtn.setAttribute("aria-label", "Play");
-        }
-
-        if ("mediaSession" in navigator) {
-          navigator.mediaSession.playbackState =
-            e.data === S.PLAYING ? "playing" : "paused";
-        }
-        if (e.data === S.ENDED) {
+          onPlaying(true);
+        } else if (e.data === S.ENDED) {
+          onPlaying(false);
           if (TRACKS.length > 1) loadTrack(index + 1);
           else player.seekTo(0, true);
           player.playVideo();
+        } else if (e.data === S.PAUSED || e.data === S.CUED) {
+          onPlaying(false);
         }
       },
     },
@@ -176,11 +354,20 @@ setInterval(() => {
   setProgress(cur / dur);
 }, 250);
 
-playBtn.addEventListener("click", () => {
-  if (!ready) return;
-  const S = YT.PlayerState;
-  if (player.getPlayerState() === S.PLAYING) player.pauseVideo();
-  else player.playVideo();
+playBtn.disabled = true;
+
+playBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const S = window.YT ? YT.PlayerState : null;
+
+  if (ready && player && S && player.getPlayerState() === S.PLAYING) {
+    wantPlay = false;
+    player.pauseVideo();
+    onPlaying(false);
+    return;
+  }
+
+  requestPlayback();
 });
 
 prevBtn.addEventListener("click", () => {

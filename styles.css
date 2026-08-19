@@ -42,71 +42,85 @@ body {
   background-color: var(--ink);
   background-image: url("/bg.jpg");
   background-size: cover;
-  background-position: 50% 45%;
+  background-position: 50% 50%;
   background-repeat: no-repeat;
 
-  /* Bumpy Hyd roads on the still; video carries its own ride motion. */
-  scale: 1.06;
-  animation: auto-bump 1.55s ease-in-out infinite,
-             auto-sway 3.6s ease-in-out infinite;
+  /* Rough-road bounce. The camera is bolted inside the auto, so the whole
+     scene moves as one; the fixed UI on top deliberately stays still.
+     Overscaled so the bump never exposes an edge.
+
+     translate and rotate are separate CSS properties, so the two
+     animations below compose instead of overwriting each other. Their
+     durations are deliberately non-multiples, so the combined pattern
+     never reads as a metronome. */
+  scale: 1.045;
+  animation: auto-bump 1.9s ease-in-out infinite,
+             auto-sway 4.7s ease-in-out infinite;
   will-change: translate, rotate;
 }
 
+/* The looping ride. bg.jpg stays underneath as the poster and the fallback
+   for blocked autoplay, Low Power Mode, save-data and reduced motion, so the
+   page is never blank if this never plays. object-position mirrors the still's
+   background-position so the framing is identical either way. */
 .hero-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 45%;
+  object-position: 50% 50%;
   opacity: 0;
-  transition: opacity 900ms ease;
+  transition: opacity 600ms ease;
 }
 
+/* Only revealed once it is genuinely playing, so we never cross-fade to a
+   black or half-buffered frame. */
 .hero-video.is-playing { opacity: 1; }
 
+/* The generated clip carries its own ride vibration, so while it plays the
+   CSS shake is both a double-shake and expensive on large displays. The CSS
+   shake only serves the still-image fallback. */
 .hero-bg:has(.hero-video.is-playing) {
   animation: none;
   scale: 1;
 }
 
+/* Sharp irregular jolts, not a smooth sine. Potholes, not a swing. */
 @keyframes auto-bump {
   0%   { translate: 0 0; }
-  8%   { translate: 0 -4px; }
-  16%  { translate: 1px 2px; }
-  27%  { translate: 0 -2px; }
-  38%  { translate: -1px 0; }
-  49%  { translate: 0 -5px; }
-  58%  { translate: 1px 1px; }
-  70%  { translate: 0 -2px; }
-  82%  { translate: -1px 1px; }
-  93%  { translate: 0 -3px; }
+  9%   { translate: 0 -3px; }
+  17%  { translate: 0 1px; }
+  28%  { translate: 0 -2px; }
+  36%  { translate: 0 0; }
+  47%  { translate: 0 -4px; }
+  55%  { translate: 0 1px; }
+  63%  { translate: 0 -1px; }
+  74%  { translate: 0 -3px; }
+  85%  { translate: 0 1px; }
+  93%  { translate: 0 -2px; }
   100% { translate: 0 0; }
 }
 
 @keyframes auto-sway {
-  0%   { rotate: -0.12deg; }
-  28%  { rotate: 0.14deg; }
-  54%  { rotate: -0.08deg; }
-  78%  { rotate: 0.1deg; }
-  100% { rotate: -0.12deg; }
+  0%   { rotate: -0.08deg; }
+  30%  { rotate: 0.1deg; }
+  55%  { rotate: -0.05deg; }
+  80%  { rotate: 0.07deg; }
+  100% { rotate: -0.08deg; }
 }
 
+/* Top and bottom only, to keep the fixed UI readable. The middle stays
+   clear so the artwork reads on its own. */
 .scrim {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(to bottom, rgba(18, 16, 14, 0.38) 0%, rgba(18, 16, 14, 0.02) 36%, rgba(18, 16, 14, 0.12) 58%, rgba(18, 16, 14, 0.58) 100%),
-    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255, 170, 60, 0.14), transparent 72%);
-  animation: dusk-breathe 7.5s ease-in-out infinite;
+  background: linear-gradient(to bottom, rgba(18, 16, 14, 0.22) 0%, rgba(18, 16, 14, 0) 42%, rgba(18, 16, 14, 0.52) 100%);
 }
 
-@keyframes dusk-breathe {
-  0%, 100% { opacity: 0.92; }
-  50% { opacity: 1; }
-}
-
+/* Above the artwork at -10, below the UI. Overlay blending lifts the flat
+   gouache without washing out the whites in the player pill. */
 .grain {
   position: fixed;
   inset: 0;
@@ -115,7 +129,6 @@ body {
   height: 100%;
   pointer-events: none;
   mix-blend-mode: overlay;
-  opacity: 0.85;
 }
 
 main {
@@ -176,6 +189,13 @@ main {
 .pill-arrow { display: inline-flex; rotate: -45deg; opacity: 0.5; transition: opacity 0.2s ease; }
 .pill:hover .pill-arrow { opacity: 0.9; }
 
+button.pill-btn {
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 /* ---------- brand ---------- */
 
 .brand {
@@ -235,6 +255,28 @@ main {
     filter: blur(0);
   }
 }
+
+/* ---------- toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: calc(var(--edge) + env(safe-area-inset-top) + 48px);
+  translate: -50% 0;
+  z-index: 40;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.88);
+  border: 1px solid rgba(245, 197, 24, 0.45);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.toast[hidden] { display: none !important; }
 
 /* ---------- player ---------- */
 
@@ -319,6 +361,14 @@ main {
 @keyframes spin { to { rotate: 360deg; } }
 
 .meta { flex: 1 1 auto; min-width: 0; }
+
+.now {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(245, 197, 24, 0.85);
+  margin-bottom: 2px;
+}
 
 .title,
 .artist {
@@ -442,14 +492,15 @@ main {
 @media (max-width: 767px) {
   :root { --edge: 14px; }
 
-  .hero-bg { background-position: 50% 42%; }
-  .hero-video { object-position: 50% 42%; }
+  /* Landscape-on-small-screens fallback crop. Portrait devices get their
+     own artwork below and never use this. */
+  .hero-bg { background-position: 48% 50%; }
+  .hero-video { object-position: 48% 50%; }
 
   .brand {
     margin-top: 0;
     padding-inline: 10px;
-    /* Keep brand above the player, not crushed into it */
-    margin-bottom: 28vh;
+    margin-bottom: 22vh;
   }
   .brand-mark { font-size: clamp(2.6rem, 14vw, 3.8rem); }
   .brand-mark::after { margin-top: 10px; height: 3px; width: min(140px, 36vw); }
@@ -464,16 +515,17 @@ main {
   .pill { padding: 10px; }
   .pill-label, .pill-arrow { display: none; }
 
+
   .player {
     gap: 10px;
     padding: 10px 12px 10px 10px;
     border-radius: 28px;
-    /* Sit clear of iOS Safari's bottom chrome */
     bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .disc { width: 52px; height: 52px; }
   .meta { flex: 1 1 0; min-width: 0; }
+  .now { font-size: 9px; }
   .title { font-size: 14px; }
   .artist { font-size: 12px; }
   .time { font-size: 11px; }
@@ -490,6 +542,7 @@ main {
   .ctl.play svg { width: 22px; height: 22px; }
   .seek::-webkit-slider-thumb { opacity: 1; }
   .seek::-moz-range-thumb { opacity: 1; }
+
 }
 
 /* Very narrow phones — compact two-line meta, bigger hit targets */
@@ -499,6 +552,7 @@ main {
   .brand-mark { font-size: clamp(2.4rem, 15vw, 3.2rem); }
   .brand-line { font-size: 0.86rem; max-width: 15.5rem; }
 
+
   .player {
     gap: 8px;
     padding: 9px 8px 9px 9px;
@@ -506,6 +560,7 @@ main {
   }
 
   .disc { width: 48px; height: 48px; }
+  .now { display: none; }
   .title { font-size: 13px; }
   .artist { font-size: 11px; }
   .time { display: none; }
@@ -524,10 +579,22 @@ main {
   .disc { width: 44px; height: 44px; }
 }
 
+/* Portrait gets artwork composed for the frame, not a crop of the wide one.
+   hero-video.js picks /bg-portrait.mp4 to match. */
+@media (orientation: portrait) {
+  .hero-bg {
+    background-image: url("/bg-portrait.jpg");
+    background-position: 50% 50%;
+  }
+  .hero-video { object-position: 50% 50%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .disc, .clock .colon, .hero-bg, .brand, .player, .scrim { animation: none !important; }
+  .disc, .clock .colon, .hero-bg, .brand, .player, .scrim {
+    animation: none !important;
+  }
   .hero-bg { scale: 1; }
-  .hero-video { display: none; }
+  .hero-video { display: none; } /* fall back to the still */
   .brand, .player { opacity: 1; translate: 0 0; filter: none; }
   .scrim { opacity: 1; }
 }
